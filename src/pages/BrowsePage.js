@@ -1,23 +1,35 @@
-import { useState, useEffect } from 'react'; // Added useEffect
+import { useState, useEffect } from 'react';
 import SearchBar from '../components/SearchBar';
 import FilterSidebar from '../components/FileterSidebar';
 import NGOList from '../components/NGOlist';
+import { ngoService } from '../services/ngoService';
 
 function BrowsePage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({ category: [], location: '', beneficiaries: [] });
-    
-    // setIsLoading is now used below!
+    const [ngos, setNgos] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate a 800ms delay to show off your clean loading state
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 800);
+        const fetchNGOs = async () => {
+            try {
+                setIsLoading(true);
+                const data = await ngoService.getAllNGOs({
+                    search: searchQuery,
+                    city: filters.location,
+                    category: filters.category,
+                    beneficiaries: filters.beneficiaries
+                });
+                setNgos(data);
+            } catch (error) {
+                console.error('Error fetching NGOs:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-        return () => clearTimeout(timer);
-    }, []);
+        fetchNGOs();
+    }, [searchQuery, filters]);
 
     return (
         <div className="min-h-screen bg-[#f4f7f6]">
@@ -34,12 +46,11 @@ function BrowsePage() {
 
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-24">
-                                {/* Using the blue from your reference image */}
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
                                 <p className="mt-4 text-slate-400 font-medium">Loading organizations...</p>
                             </div>
                         ) : (
-                            <NGOList />
+                            <NGOList ngos={ngos} />
                         )}
                     </section>
                 </div>

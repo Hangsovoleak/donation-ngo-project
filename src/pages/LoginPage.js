@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authService } from "../services/authService";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -13,8 +17,18 @@ function LoginPage() {
       return;
     }
 
-    setError("");
-    console.log("Logging in...");
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const adminData = await authService.login(email, password);
+      authService.setAdmin(adminData);
+      navigate("/dashboard");
+    } catch (err) {
+      setError("Invalid email or password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,9 +82,10 @@ function LoginPage() {
           {/* Button */}
           <button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-xl transition"
+            disabled={isLoading}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-xl transition disabled:opacity-50"
           >
-            Login to Dashboard
+            {isLoading ? "Logging in..." : "Login to Dashboard"}
           </button>
 
           {/* Footer links */}

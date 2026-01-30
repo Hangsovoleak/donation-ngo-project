@@ -1,45 +1,7 @@
 import { useState, useEffect } from "react";
-import { useParams, Link} from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import LoadingSpinner from "../components/LoadingSpinner";
-
-    const ngoData = [
-        {
-            id: 1,
-            name: "Cambodian Children's Fund",
-            description: "Providing education and healthcare to children in rural areas.",
-            city: "Phnom Penh",
-            categories: ["Education", "Healthcare"],
-            beneficiaries: ["Children"],
-            verified: true,
-            phone: "+855 12 345 678",
-            website: "https://example.com",
-            locations: ["Location 1", "Location 2"],
-        },
-        {
-            id: 2,
-            name: "Elderly Care Network",
-            description: "Supporting elderly communities with food and medical aid.",
-            city: "Siem Reap",
-            categories: ["Food", "Healthcare"],
-            beneficiaries: ["Elderly"],
-            verified: false,
-            phone: "+855 98 765 432",
-            website: "https://example2.com",
-            locations: ["Location A"],
-        },
-        {
-            id: 3,
-            name: "Community Clothing Drive",
-            description: "Distributing clothing to underserved families.",
-            city: "Battambang",
-            categories: ["Clothing"],
-            beneficiaries: ["Community"],
-            verified: true,
-            phone: "+855 23 456 789",
-            website: "https://example3.com",
-            locations: ["Location X", "Location Y"],
-        },
-    ];
+import { ngoService } from "../services/ngoService";
 
 function ProfilePage() {
     const { id } = useParams();
@@ -47,9 +9,19 @@ function ProfilePage() {
     const [ngo, setNgo] = useState(null);
 
     useEffect(() => {
-        const foundNgo = ngoData.find(n => n.id === parseInt(id));
-        setNgo(foundNgo);
-        setLoading(false);
+        const fetchNGO = async () => {
+            try {
+                setLoading(true);
+                const data = await ngoService.getNGOById(id);
+                setNgo(data);
+            } catch (error) {
+                console.error('Error fetching NGO:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchNGO();
     }, [id]);
 
     if (loading) return <LoadingSpinner />;
@@ -58,7 +30,7 @@ function ProfilePage() {
     return (
         <div className="min-h-screen bg-[#f4f7f6] text-slate-800 font-sans p-4 md:p-8">
             <main className="max-w-5xl mx-auto">
-                
+
                 {/* Header Navigation */}
                 <div className="flex items-center justify-between mb-8">
                     <Link to="/browse" className="flex items-center gap-2 text-slate-500 hover:text-black transition-colors">
@@ -68,7 +40,7 @@ function ProfilePage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
+
                     {/* Left Column: Main Info */}
                     <div className="lg:col-span-2 space-y-6">
                         <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
@@ -85,15 +57,15 @@ function ProfilePage() {
                                     </span>
                                 )}
                             </div>
-                            
+
                             <p className="text-slate-500 leading-relaxed text-lg mb-8">
                                 {ngo.description}
                             </p>
 
                             <div className="flex flex-wrap gap-2">
                                 {ngo.categories.map(cat => (
-                                    <span key={cat} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-semibold">
-                                        {cat}
+                                    <span key={cat.id} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-semibold">
+                                        {cat.name}
                                     </span>
                                 ))}
                             </div>
@@ -103,9 +75,12 @@ function ProfilePage() {
                             <h3 className="text-xl font-bold mb-6">Donation Locations</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {ngo.locations.map((loc, index) => (
-                                    <div key={index} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
+                                    <div key={index} className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl">
                                         <div className="bg-white p-2 rounded-lg shadow-sm text-blue-500">🏠</div>
-                                        <span className="font-medium text-slate-700">{loc}</span>
+                                        <div className="flex-1">
+                                            <span className="font-medium text-slate-700 block">{loc.address}</span>
+                                            {loc.city && <span className="text-xs text-slate-400 mt-1 block">{loc.city}</span>}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -116,17 +91,17 @@ function ProfilePage() {
                     <div className="space-y-6">
                         <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
                             <h3 className="text-xl font-bold mb-6">Contact Details</h3>
-                            
+
                             <div className="space-y-6">
                                 <div>
                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Phone</label>
                                     <p className="text-lg font-semibold">{ngo.phone}</p>
                                 </div>
-                                
+
                                 <div className="pb-6 border-b border-slate-100">
                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Website</label>
                                     <a href={ngo.website} className="text-blue-500 font-semibold hover:underline break-all">
-                                        {ngo.website.replace('https://', '')}
+                                        {ngo.website?.replace('https://', '')}
                                     </a>
                                 </div>
 
