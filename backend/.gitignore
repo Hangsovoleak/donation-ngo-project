@@ -4,3 +4,8 @@ __pycache__/
 .env
 .DS_Store
 *.db
+node_modules
+test_login_api.py
+debug_auth.py
+seed_admin.py
+server.log
