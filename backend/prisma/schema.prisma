@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model beneficiaries {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  ngo_beneficiaries ngo_beneficiaries[]
+}
+
+model categories {
+  id             Int              @id @default(autoincrement())
+  name           String           @unique
+  ngo_categories ngo_categories[]
+}
+
+model ngo_beneficiaries {
+  ngo_id         Int
+  beneficiary_id Int
+  beneficiaries  beneficiaries @relation(fields: [beneficiary_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ngos           ngos          @relation(fields: [ngo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([ngo_id, beneficiary_id])
+  @@index([beneficiary_id])
+}
+
+model ngo_categories {
+  ngo_id      Int
+  category_id Int
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ngos        ngos       @relation(fields: [ngo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([ngo_id, category_id])
+  @@index([category_id])
+}
+
+model ngo_locations {
+  id     Int    @id @default(autoincrement())
+  ngo_id Int?
+  link   String
+  ngos   ngos?  @relation(fields: [ngo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ngo_id])
+}
+
+model ngos {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  description       String?
+  city              String?
+  phone             String?
+  donation_info     String?
+  needs             String?
+  verified          Boolean?            @default(false)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  ngo_beneficiaries ngo_beneficiaries[]
+  ngo_categories    ngo_categories[]
+  ngo_locations     ngo_locations[]
+
+  @@index([city])
+  @@index([verified])
+  @@index([city, verified])
+}
