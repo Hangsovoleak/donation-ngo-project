@@ -4,6 +4,7 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
+<<<<<<< HEAD
     extend: {
       colors: {
         brand: {
@@ -18,3 +19,9 @@ module.exports = {
   },
   plugins: [],
 }
+=======
+    extend: {},
+  },
+  plugins: [],
+}
+>>>>>>> 403bbf9e8d9e1e8313a643c1479f5c0bb2f245e5
