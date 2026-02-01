@@ -2,7 +2,7 @@ import "dotenv/config";
 import app from "./app.js";
 import prisma from "./db/prisma.js";
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 async function warmUp() {
   try {
