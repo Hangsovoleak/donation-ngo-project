@@ -6,8 +6,8 @@ const router = Router();
 // GET /api/locations?ngoId=1
 router.get("/", async (req, res, next) => {
   try {
-    const ngoId = req.query.ngoId ? Number(req.query.ngoId) : null;
-    const where = ngoId ? { ngo_id: ngoId } : {};
+    const ngoId = parseId(req.query.ngoId);
+    const where = ngoId == null ? {} : { ngo_id : ngoId};
 
     const locations = await prisma.ngo_locations.findMany({
       where,
@@ -15,8 +15,8 @@ router.get("/", async (req, res, next) => {
     });
 
     res.json(locations);
-  } catch (e) {
-    next(e);
+  } catch (err) {
+    next(err);
   }
 });
 

@@ -5,10 +5,7 @@ import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
   datasource: {
-      url: "postgresql://neondb_owner:npg_1eSYhU8QDmEb@ep-purple-haze-a1czop1r-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    url: process.env.DATABASE_URL!,
   },
 });

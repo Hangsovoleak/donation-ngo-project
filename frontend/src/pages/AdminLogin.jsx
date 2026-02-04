@@ -31,15 +31,15 @@ function AdminLogin() {
     }
 
     return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-brand-base px-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-white px-4">
             <div className="relative w-full max-w-md">
-                <div className="relative bg-white border border-brand-soft rounded-2xl shadow-sm p-4 md:p-6">
+                <div className="relative bg-white border border-brand-soft rounded-2xl shadow-xl p-4 md:p-6">
                     <div className="flex items-center justify-between border-b border-brand-soft pb-4 md:pb-5">
                         <h3 className="text-lg font-semibold text-brand-ink">Sign in for Admin</h3>
                         <button
                             type="button"
                             onClick={() => navigate("/")}
-                            className="text-brand-ink/70 bg-transparent hover:bg-brand-base hover:text-brand-ink rounded-md text-sm w-9 h-9 ms-auto inline-flex justify-center items-center"
+                            className="text-brand-ink/70 bg-transparent hover:bg-brand-soft/60 hover:text-brand-ink rounded-md text-sm w-9 h-9 ms-auto inline-flex justify-center items-center"
                             aria-label="Close"
                         >
                             <svg
@@ -62,7 +62,7 @@ function AdminLogin() {
                         </button>
                     </div>
 
-                    {err && <div className="mt-4 text-sm text-red-600">{err}</div>}
+                    {err && <div className="mt-4 text-sm text-brand-red">{err}</div>}
 
                     <form onSubmit={handleSubmit} className="pt-4 md:pt-6">
                         <div className="mb-4">
@@ -74,7 +74,7 @@ function AdminLogin() {
                                 id="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="bg-brand-base border border-brand-soft text-brand-ink text-sm rounded-lg focus:ring-2 focus:ring-brand-soft focus:border-brand-blue block w-full px-3 py-2.5 shadow-sm placeholder:text-brand-ink/40"
+                                className="bg-white border border-brand-soft text-brand-ink text-sm rounded-lg focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple block w-full px-3 py-2.5 shadow-sm placeholder:text-brand-ink/40"
                                 placeholder="example@company.com"
                                 required
                             />
@@ -88,7 +88,7 @@ function AdminLogin() {
                                 id="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="mb-10 bg-brand-base border border-brand-soft text-brand-ink text-sm rounded-lg focus:ring-2 focus:ring-brand-soft focus:border-brand-blue block w-full px-3 py-2.5 shadow-sm placeholder:text-brand-ink/40"
+                                className="mb-10 bg-white border border-brand-soft text-brand-ink text-sm rounded-lg focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple block w-full px-3 py-2.5 shadow-sm placeholder:text-brand-ink/40"
                                 placeholder="•••••••••"
                                 required
                             />
@@ -96,7 +96,7 @@ function AdminLogin() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="text-white bg-brand-blue border border-transparent hover:bg-brand-ink focus:ring-4 focus:ring-brand-soft shadow-sm font-medium leading-5 rounded-full text-sm px-4 py-2.5 w-full mb-3"
+                            className="text-white bg-brand-blue border border-transparent hover:bg-brand-purple focus:ring-4 focus:ring-brand-purple/30 shadow-sm font-medium leading-5 rounded-full text-sm px-4 py-2.5 w-full mb-3"
                         >
                             {loading ? "Logging in..." : "Login to your account"}
                         </button>

@@ -14,6 +14,10 @@ module.exports = {
           black: "#000000",
         },
       },
+      fontFamily: {
+        sans: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Fraunces", "ui-serif", "serif"],
+      },
     },
   },
   plugins: [],

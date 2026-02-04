@@ -54,8 +54,7 @@ model ngos {
   description       String?
   city              String?
   phone             String?
-  donation_info     String?
-  needs             String?
+  image_url         String?
   verified          Boolean?            @default(false)
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)

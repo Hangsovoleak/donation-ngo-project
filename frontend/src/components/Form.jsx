@@ -1,285 +1,360 @@
 import { useEffect, useMemo, useState } from "react";
 
+const EMPTY_FORM = {
+  name: "",
+  description: "",
+  city: "",
+  phone: "",
+  image_url: "",
+  beneficiaries: [],
+  categories: [],
+  locations: [{ link: "" }],
+};
+
+function buildInitialForm(initial) {
+  const locations =
+    Array.isArray(initial.locations) && initial.locations.length
+      ? initial.locations.map((loc) => ({ link: toLink(loc) }))
+      : initial.map_link
+      ? [{ link: initial.map_link }]
+      : [{ link: "" }];
+
+  return {
+    ...EMPTY_FORM,
+    name: initial.name || "",
+    description: initial.description || "",
+    city: initial.city || "",
+    phone: initial.phone || "",
+    image_url: initial.image_url || "",
+    beneficiaries: Array.isArray(initial.beneficiaries) ? initial.beneficiaries : [],
+    categories: Array.isArray(initial.categories) ? initial.categories : [],
+    locations,
+  };
+}
+
+function toLink(loc) {
+  if (typeof loc === "string") return loc;
+  return loc?.link || "";
+}
+
 function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
-    const [form, setForm] = useState({
-        name: "",
-        description: "",
-        city: "",
-        phone: "",
-        beneficiaries: [],
-        categories: [],
-        locations: [{ link: "" }],
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  useEffect(() => {
+    if (!initial) return;
+    setForm(buildInitialForm(initial));
+  }, [initial]);
+
+  const categoryNames = useMemo(() => {
+    return Array.isArray(categories) && categories.length
+      ? categories.map((cate) => cate.name || cate)
+      : [
+          "Education",
+          "Healthcare",
+          "Food",
+          "Clothing",
+          "Enviroment",
+          "Women Empowerment",
+          "Disaster Relief",
+          "Animal Welface",
+        ];
+  }, [categories]);
+
+  const beneficiaryNames = useMemo(() => {
+    return Array.isArray(beneficiaries) && beneficiaries.length
+      ? beneficiaries.map((bene) => bene.name || bene)
+      : ["Children", "Elderly", "Community", "Women", "Animal"];
+  }, [beneficiaries]);
+
+  const categoryNameToId = useMemo(() => {
+    return new Map((categories || []).map((cate) => [cate.name, cate.id]));
+  }, [categories]);
+
+  const beneficiaryNameToId = useMemo(() => {
+    return new Map((beneficiaries || []).map((bene) => [bene.name, bene.id]));
+  }, [beneficiaries]);
+
+  function updateField(key) {
+    return (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  }
+
+  function toggleCategory(name) {
+    setForm((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(name)
+        ? prev.categories.filter((cate) => cate !== name)
+        : [...prev.categories, name],
+    }));
+  }
+
+  function toggleBeneficiary(name) {
+    setForm((prev) => ({
+      ...prev,
+      beneficiaries: prev.beneficiaries.includes(name) ? [] : [name],
+    }));
+  }
+
+  function updateLocation(index) {
+    return (e) => {
+      const value = e.target.value;
+    setForm((prev) => ({
+      ...prev,
+      locations: prev.locations.map((loc, i) =>
+        i === index ? { ...loc, link: value } : loc
+      ),
+    }));
+  };
+  }
+
+  function addLocation() {
+    setForm((prev) => ({ ...prev, locations: [...prev.locations, { link: "" }]}));
+  }
+
+  function removeLocation(index) {
+    setForm((prev) => {
+      const next = prev.locations.filter((_, i) => i !== index);
+      return { ...prev, locations: next.length ? next : [{ link: "" }] };
     });
+  }
 
-    useEffect(() => {
-        if (initial) {
-            const initialLinks =
-                Array.isArray(initial.locations) && initial.locations.length
-                    ? initial.locations.map((loc) =>
-                          typeof loc === "string" ? { link: loc } : { link: loc?.link || "" }
-                      )
-                    : initial.map_link
-                    ? [{ link: initial.map_link }]
-                    : [{ link: "" }];
+  function handleSubmit(event) {
+    event.preventDefault();
 
-            setForm({
-                name: initial.name || "",
-                description: initial.description || "",
-                city: initial.city || "",
-                phone: initial.phone || "",
-                beneficiaries: Array.isArray(initial.beneficiaries) ? initial.beneficiaries : [],
-                categories: Array.isArray(initial.categories) ? initial.categories : [],
-                locations: initialLinks,
-            });
-        }
-    }, [initial]);
-
-    const availableCategories = useMemo(() => {
-        if (Array.isArray(categories) && categories.length) {
-            return categories.map((c) => c.name || c);
-        }
-        return ["Education", "Healthcare", "Food", "Clothing"];
-    }, [categories]);
-
-    const availableBeneficiaries = useMemo(() => {
-        if (Array.isArray(beneficiaries) && beneficiaries.length) {
-            return beneficiaries.map((b) => b.name || b);
-        }
-        return ["Children", "Elderly", "Community"];
-    }, [beneficiaries]);
-
-    const update = (key) => (event) => {
-        setForm((prev) => ({ ...prev, [key]: event.target.value }));
-    };
-
-    const toggleCategory = (category) => {
-        setForm((prev) => {
-            const next = prev.categories.includes(category)
-                ? prev.categories.filter((item) => item !== category)
-                : [...prev.categories, category];
-            return { ...prev, categories: next };
-        });
-    };
-
-    const toggleBeneficiary = (target) => {
-        setForm((prev) => ({
-            ...prev,
-            beneficiaries: prev.beneficiaries.includes(target) ? [] : [target],
-        }));
-    };
-
-    const updateLocation = (index) => (event) => {
-        const value = event.target.value;
-        setForm((prev) => {
-            const locations = [...prev.locations];
-            locations[index] = { ...locations[index], link: value };
-            return { ...prev, locations };
-        });
-    };
-
-    const addLocation = () => {
-        setForm((prev) => ({
-            ...prev,
-            locations: [...prev.locations, { link: "" }],
-        }));
-    };
-
-    const removeLocation = (index) => {
-        setForm((prev) => {
-            const next = prev.locations.filter((_, i) => i !== index);
-            return { ...prev, locations: next.length ? next : [{ link: "" }] };
-        });
-    };
-
-    function handleSubmit(event) {
-        event.preventDefault();
-
-        if (!form.name.trim()) {
-            alert("NGO name is required");
-            return;
-        }
-
-        const mapLinks = form.locations
-            .map((loc) => loc.link.trim())
-            .filter(Boolean);
-
-        onSubmit({
-            ...form,
-            map_link: mapLinks[0] || "",
-            map_links: mapLinks,
-        });
+    if (!form.name.trim()) {
+      alert("NGO name is required");
+      return;
     }
 
-    return (
-        <form onSubmit={handleSubmit} className="h-full space-y-0">
-            <div>
-                <label className="text-xs font-semibold text-slate-600 mb-2 block">Organization Name</label>
-                <input
+    const categoryIds = form.categories
+      .map((name) => categoryNameToId.get(name))
+      .filter(Number.isFinite);
+
+    const beneficiaryIds = form.beneficiaries
+      .map((name) => beneficiaryNameToId.get(name))
+      .filter(Number.isFinite);
+
+    const mapLinks = form.locations.map((loc) => loc.link.trim()).filter(Boolean);
+
+    onSubmit({
+      ...form,
+      categoryIds,
+      beneficiaryIds,
+      map_link: mapLinks[0] || "",
+      map_links: mapLinks,
+    });
+  }
+
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white border border-brand-soft rounded-lg shadow-sm p-5 md:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-lg font-bold text-brand-ink">
+            {initial ? "Edit organization" : "Add organization"}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {/* Name */}
+        <div className="md:col-span-2">
+          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">
+            Organization Name
+          </label>
+          <input
+            type="text"
+            value={form.name}
+            onChange={updateField("name")}
+            placeholder="e.g. Hope for Children"
+            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-lg outline-none text-sm text-brand-ink"
+            required
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Description</label>
+          <textarea
+            value={form.description}
+            onChange={updateField("description")}
+            placeholder="Tell us about the mission..."
+            rows={3}
+            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-lg outline-none text-sm text-brand-ink resize-none"
+            required
+          />
+        </div>
+
+        {/* City */}
+        <div>
+          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Operating City</label>
+          <select
+            value={form.city}
+            onChange={updateField("city")}
+            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-2xl outline-none text-sm text-brand-ink"
+            required
+          >
+            <option value="" disabled>
+              Select Province
+            </option>
+            <option value="Banteay Meanchey">Banteay Meanchey</option>
+            <option value="Battambang">Battambang</option>
+            <option value="Kampong Chhnang">Kampong Chhnang</option>
+            <option value="Kampong Cham">Kampong Cham</option>
+            <option value="Kampong Speu">Kampong Speu</option>
+            <option value="Kampong Thom">Kampong Thom</option>
+            <option value="Kampot">Kampot</option>
+            <option value="Kandal">Kandal</option>
+            <option value="Kep">Kep</option>
+            <option value="Kratie">Kratie</option>
+            <option value="Mondulkiri">Mondulkiri</option>
+            <option value="Phnom Penh">Phnom Penh</option>
+            <option value="Preah Sihanouk">Preah Sihanouk</option>
+            <option value="Prey Veng">Prey Veng</option>
+            <option value="Pursat">Pursat</option>
+            <option value="Ratanakiri">Ratanakiri</option>
+            <option value="Siem Reap">Siem Reap</option>
+            <option value="Stung Treng">Stung Treng</option>
+            <option value="Svay Rieng">Svay Rieng</option>
+            <option value="Takeo">Takeo</option>
+            <option value="Oddar Meanchey">Oddar Meanchey</option>
+            <option value="Preah Vihear">Preah Vihear</option>
+            <option value="Koh Kong">Koh Kong</option>
+            <option value="Tboung Khmum">Tboung Khmum</option>
+          </select>
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Phone Number</label>
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={updateField("phone")}
+            placeholder="e.g. +855 12 345 678"
+            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-2xl focus:ring-2 focus:ring-brand-purple/30 outline-none text-sm text-brand-ink"
+          />
+        </div>
+
+        {/* Image URL */}
+        <div className="md:col-span-2">
+          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Image URL</label>
+          <input
+            type="url"
+            value={form.image_url}
+            onChange={updateField("image_url")}
+            placeholder="https://example.com/image.jpg"
+            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-2xl focus:ring-2 focus:ring-brand-purple/30 outline-none text-sm text-brand-ink"
+          />
+        </div>
+
+        {/* Beneficiaries */}
+        <div className="md:col-span-2">
+          <div className="text-xs font-semibold text-brand-ink/70 mb-2">Donation for who?</div>
+          <div className="flex flex-wrap gap-2">
+            {beneficiaryNames.map((target) => {
+              const active = form.beneficiaries.includes(target);
+              return (
+                <button
+                  key={target}
+                  type="button"
+                  onClick={() => toggleBeneficiary(target)}
+                  className={
+                    active
+                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-white border border-brand-purple"
+                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-slate-900 border"
+                  }
+                >
+                  {target}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Categories */}
+        <div className="md:col-span-2">
+          <div className="text-xs font-semibold text-brand-ink/70 mb-2">Categories</div>
+          <div className="flex flex-wrap gap-2">
+            {categoryNames.map((c) => {
+              const checked = form.categories.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleCategory(c)}
+                  className={
+                    checked
+                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-white border border-brand-purple"
+                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-slate-900 border"
+                  }
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Locations */}
+        <div className="md:col-span-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-semibold text-brand-ink/70">Donation Location Links</div>
+            <button
+              type="button"
+              onClick={addLocation}
+              className="text-xs font-semibold text-blue-400 hover:underline"
+            >
+              + Add link
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {form.locations.map((loc, index) => (
+              <div
+                key={`${loc.link}-${index}`}
+                className="rounded-2xl border border-brand-soft bg-brand-soft/25 p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <input
                     type="text"
-                    value={form.name}
-                    onChange={update("name")}
-                    placeholder="e.g. Hope for Children"
-                    className="w-full px-3 py-2.5 bg-brand-base border border-brand-soft rounded-lg focus:ring-2 focus:ring-brand-soft transition-all outline-none text-sm text-brand-ink placeholder:text-brand-ink/40"
-                    required
-                />
-            </div>
-
-            <div>
-                <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Description</label>
-                <textarea
-                    value={form.description}
-                    onChange={update("description")}
-                    placeholder="Tell us about the mission..."
-                    rows={2}
-                    className="w-full px-3 py-2.5 bg-brand-base border border-brand-soft rounded-lg focus:ring-2 focus:ring-brand-soft transition-all outline-none text-sm text-brand-ink placeholder:text-brand-ink/40 resize-none"
-                    required
-                />
-            </div>
-
-            <div>
-                <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Operating City</label>
-                <select
-                    value={form.city}
-                    onChange={update("city")}
-                    className="w-full px-3 py-2.5 bg-brand-base border border-brand-soft rounded-lg focus:ring-2 focus:ring-brand-soft transition-all outline-none text-sm text-brand-ink appearance-none"
-                    required
-                >
-                    <option value="" disabled>
-                        Select Province
-                    </option>
-                    <option value="Banteay Meanchey">Banteay Meanchey</option>
-                    <option value="Battambang">Battambang</option>
-                    <option value="Kampong Chhnang">Kampong Chhnang</option>
-                    <option value="Kampong Cham">Kampong Cham</option>
-                    <option value="Kampong Speu">Kampong Speu</option>
-                    <option value="Kampong Thom">Kampong Thom</option>
-                    <option value="Kampot">Kampot</option>
-                    <option value="Kandal">Kandal</option>
-                    <option value="Kep">Kep</option>
-                    <option value="Kratie">Kratie</option>
-                    <option value="Mondulkiri">Mondulkiri</option>
-                    <option value="Phnom Penh">Phnom Penh</option>
-                    <option value="Preah Sihanouk">Preah Sihanouk</option>
-                    <option value="Prey Veng">Prey Veng</option>
-                    <option value="Pursat">Pursat</option>
-                    <option value="Ratanakiri">Ratanakiri</option>
-                    <option value="Siem Reap">Siem Reap</option>
-                    <option value="Stung Treng">Stung Treng</option>
-                    <option value="Svay Rieng">Svay Rieng</option>
-                    <option value="Takeo">Takeo</option>
-                    <option value="Oddar Meanchey">Oddar Meanchey</option>
-                    <option value="Preah Vihear">Preah Vihear</option>
-                    <option value="Koh Kong">Koh Kong</option>
-                    <option value="Tboung Khmum">Tboung Khmum</option>
-                </select>
-            </div>
-
-            <div>
-                <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Phone Number</label>
-                <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={update("phone")}
-                    placeholder="e.g. +855 12 345 678"
-                    className="w-full px-3 py-2.5 bg-brand-base border border-brand-soft rounded-lg focus:ring-2 focus:ring-brand-soft transition-all outline-none text-sm text-brand-ink placeholder:text-brand-ink/40"
-                />
-            </div>
-
-            <div>
-                <span className="text-xs font-semibold text-brand-ink/70 mb-2 block">Donation for who?</span>
-                <div className="flex flex-wrap gap-2">
-                    {availableBeneficiaries.map((target) => (
-                        <button
-                            key={target}
-                            type="button"
-                            onClick={() => toggleBeneficiary(target)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                                form.beneficiaries.includes(target)
-                                    ? "bg-brand-blue text-white border-brand-blue"
-                                    : "bg-white text-brand-ink/70 border-brand-soft hover:bg-brand-base"
-                            }`}
-                        >
-                            {target}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div>
-                <span className="text-xs font-semibold text-brand-ink/70 mb-2 block">Categories</span>
-                <div className="flex flex-wrap gap-3">
-                    {availableCategories.map((category) => {
-                        const checked = form.categories.includes(category);
-                        return (
-                            <label key={category} className="flex items-center gap-2 text-xs text-brand-ink/70">
-                                <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleCategory(category)}
-                                    className="h-4 w-4 rounded border-brand-soft text-brand-blue focus:ring-brand-soft"
-                                />
-                                {category}
-                            </label>
-                        );
-                    })}
-                </div>
-            </div>
-
-            <div>
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-brand-ink/70 ml-1">Donation Location Links</span>
+                    value={loc.link}
+                    onChange={updateLocation(index)}
+                    placeholder="Paste Google Maps link"
+                    className="w-full rounded-2xl border border-brand-soft bg-white px-3 py-2 text-xs text-brand-ink outline-none focus:ring-2 focus:ring-brand-purple/30"
+                  />
+                  {form.locations.length > 1 ? (
                     <button
-                        type="button"
-                        onClick={addLocation}
-                        className="text-xs font-semibold text-brand-blue hover:underline"
+                      type="button"
+                      onClick={() => removeLocation(index)}
+                      className="text-xs font-semibold text-red-500 hover:underline whitespace-nowrap"
                     >
-                        Add link
+                      Remove
                     </button>
+                  ) : null}
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-                <div className="space-y-3">
-                    {form.locations.map((location, index) => (
-                        <div key={`${location.link}-${index}`} className="space-y-2 rounded-lg bg-brand-base p-2.5">
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="text"
-                                    value={location.link}
-                                    onChange={updateLocation(index)}
-                                    placeholder="Paste Google Maps link"
-                                    className="w-full rounded-lg border border-brand-soft bg-white px-3 py-2 text-xs text-brand-ink outline-none focus:ring-2 focus:ring-brand-soft"
-                                />
-                                {form.locations.length > 1 ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => removeLocation(index)}
-                                        className="text-xs font-semibold text-red-500 hover:underline"
-                                    >
-                                        Remove
-                                    </button>
-                                ) : null}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="flex-1 px-4 py-2.5 bg-brand-base text-brand-ink/70 text-sm font-semibold rounded-lg hover:bg-brand-soft transition-all"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    className="flex-1 px-4 py-2.5 bg-brand-blue text-white text-sm font-semibold rounded-lg hover:bg-brand-ink transition-all"
-                >
-                    Save Organization
-                </button>
-            </div>
-        </form>
-    );
+      {/* Actions */}
+      <div className="mt-6 flex gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-2.5 bg-white text-slate-900 text-sm font-semibold rounded-2xl border border-black hover:bg-slate-200"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="flex-1 px-4 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-2xl hover:bg-slate-900"
+        >
+          Save
+        </button>
+      </div>
+    </form>
+  );
 }
 
 export default Form;

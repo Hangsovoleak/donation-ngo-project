@@ -1,115 +1,190 @@
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import NgoCard from "../components/Card";
+import { getNgos } from "../api/ngoApi";
+import { getCategories } from "../api/metaApi";
+import { GraduationCap, Cross, ChefHat, Shirt, Bookmark, Venus, ShieldCheck, UsersRound, MapPin, TreeDeciduous, Cat } from "lucide-react";
+
+const QUICK = [
+  { label: "Education", icon: GraduationCap, color: "#2878c3" },
+  { label: "Healthcare", icon: Cross, color: "#3b2da9" },
+  { label: "Food", icon: ChefHat, color: "#ffffff" },
+  { label: "Clothing", icon: Shirt, color: "#d10065" },
+  { label: "Environment", icon: TreeDeciduous, color: "#064b2b" },
+  { label: "Women Empowerment", icon: Venus, color: "#d20fcb" },
+  { label: "Disaster Relief", icon: UsersRound, color: "#940000" },
+  { label: "Animal Welfare", icon: Cat, color: "#e74040" },
+];
 
 function Home() {
-    return (
-        <div className="max-w-screen-xl mx-auto px-4 py-12">
-            <section className="text-center">
-                <h1 className="text-3xl md:text-4xl font-bold text-brand-ink">
-                    NGO Donation Directory
-                </h1>
-                <p className="mt-3 text-brand-ink/70 max-w-2xl mx-auto">
-                    A safe and transparent way to find verified NGOs and donate with confidence.
-                </p>
-                <div className="mt-6">
-                    <Link
-                        to="/browse"
-                        className="inline-flex items-center gap-2 text-white bg-brand-blue hover:bg-brand-ink border border-transparent focus:ring-4 focus:ring-brand-soft font-medium leading-5 rounded-full text-sm px-5 py-2.5 shadow-sm"
-                    >
-                        Explore Our Website
-                    </Link>
-                </div>
-            </section>
+  const navigate = useNavigate();
 
-            <section className="mt-10">
-                <div className="grid gap-4 md:grid-cols-3">
-                    <img
-                        src="/images/image1.jpg"
-                        alt="Children receiving school supplies"
-                        className="h-56 w-full rounded-2xl object-cover border border-brand-soft shadow-sm"
-                        loading="lazy"
-                    />
-                    <img
-                        src="/images/images2.jpg"
-                        alt="Students smiling and waving"
-                        className="h-56 w-full rounded-2xl object-cover border border-brand-soft shadow-sm"
-                        loading="lazy"
-                    />
-                    <img
-                        src="/images/image3.jpg"
-                        alt="Students reading together"
-                        className="h-56 w-full rounded-2xl object-cover border border-brand-soft shadow-sm"
-                        loading="lazy"
-                    />
-                </div>
-            </section>
+  const [search, setSearch] = useState("");
+  const [featured, setFeatured] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [err, setErr] = useState("");
 
-            <section className="mt-10 bg-white rounded-2xl p-6 border border-brand-soft shadow-sm">
-                <h2 className="text-lg md:text-xl font-semibold text-brand-ink text-center">
-                    Why You Can Trust This Platform
-                </h2>
-                <div className="mt-6 grid gap-6 md:grid-cols-3">
-                    <div className="text-brand-ink/70">
-                        <div className="font-semibold text-brand-ink mb-2">Verified NGOs</div>
-                        <p>
-                            All listed NGOs are verified for authenticity and transparency. We check
-                            registration details and credentials.
-                        </p>
-                    </div>
-                    <div className="text-brand-ink/70">
-                        <div className="font-semibold text-brand-ink mb-2">No Money Collected</div>
-                        <p>
-                            We do not handle any donations. All contributions are made directly to NGOs
-                            through their official channels.
-                        </p>
-                    </div>
-                    <div className="text-brand-ink/70">
-                        <div className="font-semibold text-brand-ink mb-2">Clear Donation Information</div>
-                        <p>
-                            Each NGO profile includes complete details on how to donate safely and what
-                            they need.
-                        </p>
-                    </div>
-                </div>
-            </section>
+  useEffect(() => {
+    (async () => {
+      try {
+        const cats = await getCategories();
+        setCategories(cats.data || cats || []);
+      } catch (e) {
+        // silent: Home still works without categories
+      }
+    })();
+  }, []);
 
-            <div className="mt-8 bg-brand-soft/60 rounded-full p-4 border border-brand-blue text-center text-brand-ink">
-                We do not collect donations. We only share verified information.
-            </div>
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getNgos({ verified: "true" });
+        const data = list.data || list || [];
+        setFeatured(data.slice(0, 6));
+      } catch (e) {
+        setErr(e.message || "Failed to load NGOs");
+      }
+    })();
+  }, []);
 
-            <footer className="mt-12 border-t border-brand-soft pt-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-3">
-                        <img
-                            src="https://www.tuxglobalinstitute.edu.kh/_ipx/w_300&f_webp/images/TGI-Logo.png"
-                            alt="TUX Global Institute logo"
-                            className="h-10 w-auto"
-                            loading="lazy"
-                        />
-                    </div>
-                    <div className="text-sm text-brand-ink/70 md:text-right">
-                        <div className="font-semibold text-brand-ink">Members</div>
-                        <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
-                            <span className="inline-flex items-center rounded-full bg-brand-soft px-2 py-0.5 text-xs text-brand-ink">
-                                Panha
-                            </span>
-                            <span className="inline-flex items-center rounded-full bg-brand-soft px-2 py-0.5 text-xs text-brand-ink">
-                                Voleak
-                            </span>
-                            <span className="inline-flex items-center rounded-full bg-brand-soft px-2 py-0.5 text-xs text-brand-ink">
-                                Monika
-                            </span>
-                            <span className="inline-flex items-center rounded-full bg-brand-soft px-2 py-0.5 text-xs text-brand-ink">
-                                Nyda
-                            </span>
-                            <span className="inline-flex items-center rounded-full bg-brand-soft px-2 py-0.5 text-xs text-brand-ink">
-                                Darith
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+  const quickByLabel = useMemo(() => {
+    return new Map(QUICK.map((item) => [item.label, item]));
+  }, []);
+
+  const catList = useMemo(() => {
+    const fromApi = Array.isArray(categories) ? categories.map((c) => c.name || c) : [];
+    return Array.from(new Set([...QUICK.map((q) => q.label), ...fromApi].filter(Boolean)));
+  }, [categories]);
+
+  function goBrowse(params = {}) {
+    const qs = new URLSearchParams(params);
+    navigate(`/browse?${qs.toString()}`);
+  }
+
+  return (
+    <div className="space-y-12">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div className="h-[380px] md:h-[440px] w-full">
+          <img
+            src="https://www.pse.ngo/sites/default/files/images/paragraphs/img2553.jpg"
+            alt="Donation"
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         </div>
-    );
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+
+        <div className="absolute inset-0 flex items-end">
+          <div className="p-6 md:p-10 w-full">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-widest text-white/85 uppercase">
+                Donation Directory
+              </p>
+
+              <h1 className="mt-2 text-3xl md:text-5xl font-display text-white">
+                Find verified NGOs and donate safely
+              </h1>
+
+              <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search NGOs by name or description..."
+                    className="w-full px-4 py-2.5 rounded-full border border-white/70 bg-white/95 text-slate-900 shadow-sm"
+                  />
+                </div>
+                <button
+                  onClick={() => goBrowse({ search })}
+                  className="px-5 py-2.5 rounded-full bg-slate-900 text-white font-semibold hover:bg-black"
+                >
+                  Search
+                </button>
+                <Link
+                  to="/browse"
+                  className="px-5 py-2.5 rounded-full bg-white/90 text-slate-900 font-semibold hover:bg-white"
+                >
+                  Browse all
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          {catList.map((c) => {
+            const quick = quickByLabel.get(c);
+            const Icon = quick?.icon || Bookmark;
+            const color = quick?.color || "#fa9200";
+            return (
+            <button
+              key={c}
+              onClick={() => goBrowse({ category: c })}
+              className="group rounded-xl border border-slate-200 bg-slate-900 hover:bg-black p-4 text-left"
+            >
+              <div className="text-3xl">
+                <Icon color={color} size={32} />
+              </div>
+              <div className="mt-2 text-sm font-semibold text-white group-hover:text-white">
+                {c}
+              </div>
+              <div className="text-xs text-white/50">Explore</div>
+            </button>
+          )})}
+
+          <button
+            onClick={() => goBrowse({ verified: "true" })}
+            className="group rounded-xl border border-slate-200 bg-slate-900 hover:bg-black p-4 text-left"
+          >
+            <div className="text-3xl"><ShieldCheck color="#08e272" size={32} /></div>
+            <div className="mt-2 text-sm font-semibold text-white group-hover:text-white">Verified</div>
+            <div className="text-xs text-white/50">Only verified NGOs</div>
+          </button>
+
+          <button
+            onClick={() => goBrowse({ city: "Phnom Penh" })}
+            className="group rounded-xl border border-slate-200 bg-slate-900 hover:bg-black p-4 text-left"
+          >
+            <div className="text-3xl"><MapPin color="#e0ce00" size={32} /></div>
+            <div className="mt-2 text-sm font-semibold text-white group-hover:text-white">Phnom Penh</div>
+            <div className="text-xs text-white/50">Browse by city</div>
+          </button>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-4">
+        <div className="lg:col-span-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-xl md:text-2xl font-display text-slate-900">
+                Featured verified NGOs
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                A quick preview. Open Browse for full filters.
+              </p>
+            </div>
+            <Link
+              to="/browse"
+              className="text-sm font-semibold text-slate-700 hover:text-slate-900"
+            >
+              View all →
+            </Link>
+          </div>
+
+          {err && <div className="mt-3 text-sm text-red-500">{err}</div>}
+
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((ngo) => (
+              <NgoCard key={ngo.id} ngo={ngo} />
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export default Home;
