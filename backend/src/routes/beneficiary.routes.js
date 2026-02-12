@@ -1,19 +1,9 @@
 import { Router } from "express";
-import prisma from "../db/prisma.js";
+import { listBeneficiariesController } from "../controllers/beneficiary.controller.js";
 
 const router = Router();
 
-//GET /api/beneficiaries
-router.get("/", async (req, res, next) => {
-  try {
-    const beneficiaries = await prisma.beneficiaries.findMany({
-      orderBy: { id : "asc"},
-    });
-
-    res.json(beneficiaries);
-  } catch (err) {
-    next(err);
-  }
-});
+// GET /api/beneficiaries
+router.get("/", listBeneficiariesController);
 
 export default router;

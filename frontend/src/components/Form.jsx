@@ -1,3 +1,4 @@
+// Form: Admin create/edit NGO form with validation and helper logic.
 import { useEffect, useMemo, useState } from "react";
 
 const EMPTY_FORM = {
@@ -146,10 +147,10 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
 
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-brand-soft rounded-lg shadow-sm p-5 md:p-6">
+    <form onSubmit={handleSubmit} className="bg-white rounded-lg p-5 md:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-lg font-bold text-brand-ink">
+          <div className="text-lg font-semibold text-slate-900">
             {initial ? "Edit organization" : "Add organization"}
           </div>
         </div>
@@ -158,7 +159,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         {/* Name */}
         <div className="md:col-span-2">
-          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">
+          <label className="text-xs font-semibold text-slate-600 mb-2 block">
             Organization Name
           </label>
           <input
@@ -166,30 +167,30 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
             value={form.name}
             onChange={updateField("name")}
             placeholder="e.g. Hope for Children"
-            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-lg outline-none text-sm text-brand-ink"
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg outline-none text-sm text-slate-900"
             required
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Description</label>
+          <label className="text-xs font-semibold text-slate-600 mb-2 block">Description</label>
           <textarea
             value={form.description}
             onChange={updateField("description")}
             placeholder="Tell us about the mission..."
             rows={3}
-            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-lg outline-none text-sm text-brand-ink resize-none"
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg outline-none text-sm text-slate-900 resize-none"
             required
           />
         </div>
 
         {/* City */}
         <div>
-          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Operating City</label>
+          <label className="text-xs font-semibold text-slate-600 mb-2 block">Operating City</label>
           <select
             value={form.city}
             onChange={updateField("city")}
-            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-2xl outline-none text-sm text-brand-ink"
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none text-sm text-slate-900"
             required
           >
             <option value="" disabled>
@@ -224,31 +225,31 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
 
         {/* Phone */}
         <div>
-          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Phone Number</label>
+          <label className="text-xs font-semibold text-slate-600 mb-2 block">Phone Number</label>
           <input
             type="tel"
             value={form.phone}
             onChange={updateField("phone")}
             placeholder="e.g. +855 12 345 678"
-            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-2xl focus:ring-2 focus:ring-brand-purple/30 outline-none text-sm text-brand-ink"
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none text-sm text-slate-900"
           />
         </div>
 
         {/* Image URL */}
         <div className="md:col-span-2">
-          <label className="text-xs font-semibold text-brand-ink/70 mb-2 block">Image URL</label>
+          <label className="text-xs font-semibold text-slate-600 mb-2 block">Image URL</label>
           <input
             type="url"
             value={form.image_url}
             onChange={updateField("image_url")}
             placeholder="https://example.com/image.jpg"
-            className="w-full px-3 py-2.5 bg-white border border-brand-soft rounded-2xl focus:ring-2 focus:ring-brand-purple/30 outline-none text-sm text-brand-ink"
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none text-sm text-slate-900"
           />
         </div>
 
         {/* Beneficiaries */}
         <div className="md:col-span-2">
-          <div className="text-xs font-semibold text-brand-ink/70 mb-2">Donation for who?</div>
+          <div className="text-xs font-semibold text-slate-600 mb-2">Donation for who?</div>
           <div className="flex flex-wrap gap-2">
             {beneficiaryNames.map((target) => {
               const active = form.beneficiaries.includes(target);
@@ -259,8 +260,8 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
                   onClick={() => toggleBeneficiary(target)}
                   className={
                     active
-                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-white border border-brand-purple"
-                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-slate-900 border"
+                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white border border-slate-900"
+                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200"
                   }
                 >
                   {target}
@@ -272,7 +273,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
 
         {/* Categories */}
         <div className="md:col-span-2">
-          <div className="text-xs font-semibold text-brand-ink/70 mb-2">Categories</div>
+          <div className="text-xs font-semibold text-slate-600 mb-2">Categories</div>
           <div className="flex flex-wrap gap-2">
             {categoryNames.map((c) => {
               const checked = form.categories.includes(c);
@@ -283,8 +284,8 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
                   onClick={() => toggleCategory(c)}
                   className={
                     checked
-                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-white border border-brand-purple"
-                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-slate-900 border"
+                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white border border-slate-900"
+                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200"
                   }
                 >
                   {c}
@@ -297,11 +298,11 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
         {/* Locations */}
         <div className="md:col-span-2">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-brand-ink/70">Donation Location Links</div>
+            <div className="text-xs font-semibold text-slate-600">Donation Location Links</div>
             <button
               type="button"
               onClick={addLocation}
-              className="text-xs font-semibold text-blue-400 hover:underline"
+              className="text-xs font-semibold text-slate-700 hover:underline"
             >
               + Add link
             </button>
@@ -311,7 +312,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
             {form.locations.map((loc, index) => (
               <div
                 key={`${loc.link}-${index}`}
-                className="rounded-2xl border border-brand-soft bg-brand-soft/25 p-3"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-3"
               >
                 <div className="flex items-center gap-3">
                   <input
@@ -319,7 +320,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
                     value={loc.link}
                     onChange={updateLocation(index)}
                     placeholder="Paste Google Maps link"
-                    className="w-full rounded-2xl border border-brand-soft bg-white px-3 py-2 text-xs text-brand-ink outline-none focus:ring-2 focus:ring-brand-purple/30"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none"
                   />
                   {form.locations.length > 1 ? (
                     <button
@@ -342,13 +343,13 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2.5 bg-white text-slate-900 text-sm font-semibold rounded-2xl border border-black hover:bg-slate-200"
+          className="flex-1 btn-outline text-sm"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="flex-1 px-4 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-2xl hover:bg-slate-900"
+          className="flex-1 btn-primary text-sm"
         >
           Save
         </button>

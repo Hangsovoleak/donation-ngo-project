@@ -7,9 +7,9 @@ const port = process.env.PORT || 5000;
 async function warmUp() {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    console.log("DB warm-up OK");
+    console.log("DB OK! yeahhhhhh jork jey");
   } catch (e) {
-    console.log("DB warm-up failed:", e.message);
+    console.log("DB failed tt hx:", e.message);
   }
 }
 

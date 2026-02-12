@@ -1,8 +1,14 @@
+// Page: Search + filter NGOs with pagination and sorting.
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import NgoCard from "../components/Card";
-import { getNgos } from "../api/ngoApi";
-import { getCategories } from "../api/metaApi";
+import { getNgos } from "../services/ngo.service";
+import { getCategories } from "../services/meta.service";
+
+// Import Browse page components
+import BrowseHeader from "../components/browse/BrowseHeader";
+import FilterPanel from "../components/browse/FilterPanel";
+import NGOGrid from "../components/browse/NGOGrid";
+import Pagination from "../components/browse/Pagination";
 
 function Browse() {
   const [params, setParams] = useSearchParams();
@@ -14,9 +20,14 @@ function Browse() {
   const [city, setCity] = useState(params.get("city") || "");
   const [category, setCategory] = useState(params.get("category") || "");
   const [verifiedOnly, setVerifiedOnly] = useState(params.get("verified") === "true");
+  const [page, setPage] = useState(Number(params.get("page")) || 1);
+  const [limit, setLimit] = useState(Number(params.get("limit")) || 9);
+  const [sortBy, setSortBy] = useState(params.get("sortBy") || "updated_at");
+  const [sortOrder, setSortOrder] = useState(params.get("sortOrder") || "desc");
 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [meta, setMeta] = useState(null);
 
   async function loadCategories() {
     try {
@@ -36,8 +47,19 @@ function Browse() {
         city,
         category,
         verified: verifiedOnly ? "true" : "",
+        page,
+        limit,
+        sortBy,
+        sortOrder,
       });
-      setNgos(list.data || list || []);
+      const payload = list?.data || list || [];
+      if (payload?.data && Array.isArray(payload.data)) {
+        setNgos(payload.data);
+        setMeta(payload.meta || null);
+      } else {
+        setNgos(payload);
+        setMeta(null);
+      }
     } catch (e) {
       setErr(e.message || "Failed to load NGOs");
     }
@@ -58,18 +80,20 @@ function Browse() {
     if (city) next.city = city;
     if (category) next.category = category;
     if (verifiedOnly) next.verified = "true";
+    if (page && page !== 1) next.page = String(page);
+    if (limit && limit !== 9) next.limit = String(limit);
+    if (sortBy && sortBy !== "updated_at") next.sortBy = sortBy;
+    if (sortOrder && sortOrder !== "desc") next.sortOrder = sortOrder;
     setParams(next, { replace: true });
     // eslint-disable-next-line
-  }, [search, city, category, verifiedOnly]);
+  }, [search, city, category, verifiedOnly, page, limit, sortBy, sortOrder]);
 
   // reload when filters change (debounced)
   useEffect(() => {
     const timer = setTimeout(() => loadNgos(), 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line
-  }, [search, city, category, verifiedOnly]);
-
-  const cities = Array.from(new Set(ngos.map((n) => n.city).filter(Boolean)));
+  }, [search, city, category, verifiedOnly, page, limit, sortBy, sortOrder]);
 
   const availableCategories = useMemo(() => {
     const fallback = ["Education", "Healthcare", "Food", "Clothing"];
@@ -79,120 +103,69 @@ function Browse() {
     return Array.from(new Set([...fallback, ...fromApi].filter(Boolean)));
   }, [categories]);
 
+  function clearFilters() {
+    setSearch("");
+    setCity("");
+    setCategory("");
+    setVerifiedOnly(false);
+    setPage(1);
+  }
+
+  function resetPage() {
+    if (page !== 1) setPage(1);
+  }
+
+  function goPrev() {
+    if (page > 1) setPage((p) => Math.max(1, p - 1));
+  }
+
+  function goNext() {
+    const totalPages = meta?.totalPages;
+    if (totalPages && page >= totalPages) return;
+    setPage((p) => p + 1);
+  }
+
+
   return (
     <div className="space-y-6">
-      {/* Header block (same style as Home sections) */}
-      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-white to-brand-soft/50 p-6 md:p-10 text-center shadow-sm">
-        <h1 className="mt-2 text-2xl md:text-4xl font-display text-slate-900">
-          Find the right organization
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Search by name, filter by category, city, or verified status.
-        </p>
-      </div>
+      <BrowseHeader />
 
-      {/* Filters */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-        <div className="grid gap-4 md:grid-cols-4">
-          <div>
-            <label className="block mb-2 text-xs font-semibold text-slate-900">Search</label>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-slate-950 text-sm font-semibold rounded-xl shadow-sm outline-none focus:border-slate-400"
-              placeholder="Search by name or description"
-            />
-          </div>
+      <FilterPanel
+        search={search}
+        setSearch={setSearch}
+        category={category}
+        setCategory={setCategory}
+        city={city}
+        setCity={setCity}
+        verifiedOnly={verifiedOnly}
+        setVerifiedOnly={setVerifiedOnly}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        limit={limit}
+        setLimit={setLimit}
+        availableCategories={availableCategories}
+        totalNgos={meta?.total ?? ngos.length}
+        onClearFilters={clearFilters}
+        onResetPage={resetPage}
+        showClearButton={search || city || category || verifiedOnly}
+      />
 
-          <div>
-            <label className="block mb-2 text-xs font-semibold text-slate-900">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-slate-950 text-sm font-semibold rounded-xl shadow-sm outline-none focus:border-slate-400"
-            >
-              <option value="">All Category</option>
-              {availableCategories.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
+      <NGOGrid
+        ngos={ngos}
+        loading={loading}
+        error={err}
+        onClearFilters={clearFilters}
+      />
 
-          <div>
-            <label className="block mb-2 text-xs font-semibold text-slate-900">City</label>
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-slate-950 text-sm font-semibold rounded-xl shadow-sm outline-none focus:border-slate-400"
-            >
-                <option value="">All Cities</option>
-                <option value="Banteay Meanchey">Banteay Meanchey</option>
-                <option value="Battambang">Battambang</option>
-                <option value="Kampong Chhnang">Kampong Chhnang</option>
-                <option value="Kampong Cham">Kampong Cham</option>
-                <option value="Kampong Speu">Kampong Speu</option>
-                <option value="Kampong Thom">Kampong Thom</option>
-                <option value="Kampot">Kampot</option>
-                <option value="Kandal">Kandal</option>
-                <option value="Kep">Kep</option>
-                <option value="Kratie">Kratie</option>
-                <option value="Mondulkiri">Mondulkiri</option>
-                <option value="Phnom Penh">Phnom Penh</option>
-                <option value="Preah Sihanouk">Preah Sihanouk</option>
-                <option value="Prey Veng">Prey Veng</option>
-                <option value="Pursat">Pursat</option>
-                <option value="Ratanakiri">Ratanakiri</option>
-                <option value="Siem Reap">Siem Reap</option>
-                <option value="Stung Treng">Stung Treng</option>
-                <option value="Svay Rieng">Svay Rieng</option>
-                <option value="Takeo">Takeo</option>
-                <option value="Oddar Meanchey">Oddar Meanchey</option>
-                <option value="Preah Vihear">Preah Vihear</option>
-                <option value="Koh Kong">Koh Kong</option>
-                <option value="Tboung Khmum">Tboung Khmum</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-2 text-xs font-semibold text-slate-900">Filter</label>
-            <label className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 text-brand-ink text-sm rounded-xl shadow-sm">
-              <input
-                type="checkbox"
-                checked={verifiedOnly}
-                onChange={(e) => setVerifiedOnly(e.target.checked)}
-                className="w-4 h-4 rounded-sm border-slate-400 bg-white"
-              />
-              Verified only
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <div className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">
-            Found {ngos.length} NGOs
-          </div>
-
-        </div>
-      </div>
-
-      {err && <div className="text-sm text-red-500">{err}</div>}
-
-      {loading ? (
-        <div className="text-sm text-slate-600">Loading...</div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {ngos.map((ngo) => (
-            <NgoCard key={ngo.id} ngo={ngo} />
-          ))}
-        </div>
-      )}
+      <Pagination
+        currentPage={page}
+        totalPages={meta?.totalPages}
+        onPrev={goPrev}
+        onNext={goNext}
+        loading={loading}
+      />
     </div>
   );
 }

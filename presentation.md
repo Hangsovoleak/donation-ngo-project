@@ -1,6 +1,6 @@
-﻿# DONATEWEB Presentation (Step by Step with Real Code)
+# DONATEWEB Presentation (Updated for New Structure)
 
-This file explains the real code in `d:\DONATEWEB` in a teacher-friendly, step-by-step way. It includes short source-code examples from your project.
+This file explains the real code in `d:\DONATEWEB` in a teacher-friendly, step-by-step way. It includes short source-code examples from your project and reflects the latest route/module structure (Feb 4, 2026).
 
 ---
 
@@ -14,26 +14,47 @@ Client (React) -> API (Node/Express) -> Database (PostgreSQL via Prisma)
 
 ---
 
-## Quick Definitions (Easy to Remember)
+## 2) Updated Project Structure (Core Only)
 
-- `Frontend`: The part users see in the browser (React pages and components).
-- `Backend`: The server that handles requests and talks to the database (Node/Express).
-- `API`: The rules and URLs the frontend uses to ask the backend for data.
-- `Endpoint`: One API URL such as `GET /api/ngos`.
-- `REST`: A style of API using standard HTTP methods (`GET`, `POST`, `PATCH`, `DELETE`).
-- `Route`: Code that handles one endpoint in Express.
-- `Middleware`: Functions that run before routes (CORS, JSON parsing).
-- `Database`: Where data is stored (PostgreSQL).
-- `ORM`: Tool that turns code into SQL queries (Prisma).
-- `Schema`: The database blueprint of tables and relations (`schema.prisma`).
-- `CRUD`: Create, Read, Update, Delete.
-- `Filter`: Narrow results (city, category, verified).
-- `Pagination`: Split large lists using `limit` and `offset`.
-- `Normalize`: Convert raw DB data into clean JSON for UI.
-- `State`: React memory for data that changes (lists, filters).
-- `Component`: Reusable UI block (card, form, layout).
-- `Page`: Full screen view (Home, Browse, Details, Admin).
-## 2) Backend Entry Point
+```
+D:\DONATEWEB
+├─ presentation.md
+├─ README.md
+├─ backend
+│  ├─ prisma\schema.prisma
+│  ├─ src
+│  │  ├─ server.js
+│  │  ├─ app.js
+│  │  ├─ db\prisma.js
+│  │  ├─ middleware\notFound.js
+│  │  ├─ middleware\errorHandler.js
+│  │  └─ routes
+│  │     ├─ ngo.routes.js
+│  │     ├─ category.routes.js
+│  │     ├─ beneficiary.routes.js
+│  │     ├─ location.routes.js
+│  │     └─ ngos
+│  │        ├─ ngos.get.js
+│  │        ├─ ngos.post.js
+│  │        ├─ ngos.patch.js
+│  │        ├─ ngos.delete.js
+│  │        └─ ngos.helpers.js
+└─ frontend
+   └─ src
+      ├─ App.js
+      ├─ api\http.js
+      ├─ api\ngoApi.js
+      ├─ api\metaApi.js
+      ├─ pages\Home.jsx
+      ├─ pages\Browse.jsx
+      ├─ pages\Details.jsx
+      ├─ pages\AdminLogin.jsx
+      └─ pages\Admin.jsx
+```
+
+---
+
+## 3) Backend Entry Point
 
 **File:** `d:\DONATEWEB\backend\src\server.js`
 
@@ -52,9 +73,9 @@ const port = process.env.PORT || 5000;
 async function warmUp() {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    console.log("DB warm-up OK");
+    console.log("DB OK! yeahhhhhh jork jey");
   } catch (e) {
-    console.log("DB warm-up failed:", e.message);
+    console.log("DB failed tt hx:", e.message);
   }
 }
 
@@ -66,7 +87,7 @@ app.listen(port, async () => {
 
 ---
 
-## 3) Express App Setup
+## 4) Express App Setup
 
 **File:** `d:\DONATEWEB\backend\src\app.js`
 
@@ -94,7 +115,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+  res.json({ok: true});
 });
 
 app.use('/api/ngos', ngoRoutes);
@@ -110,35 +131,7 @@ export default app;
 
 ---
 
-## 4) Database Connection (Prisma)
-
-**File:** `d:\DONATEWEB\backend\src\db\prisma.js`
-
-**What it does:**
-- Creates Prisma client
-- Reuses client during development
-
-```js
-import { PrismaClient } from "@prisma/client";
-
-const globalForPrisma = globalThis;
-
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    // log: ["query"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
-
-export default prisma;
-```
-
----
-
-## 5) Database Schema (PostgreSQL)
+## 5) Database Schema (PostgreSQL + Prisma)
 
 **File:** `d:\DONATEWEB\backend\prisma\schema.prisma`
 
@@ -156,8 +149,8 @@ model ngos {
   phone             String?
   image_url         String?
   verified          Boolean?            @default(false)
-  created_at        DateTime?           @default(now())
-  updated_at        DateTime?           @default(now())
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
   ngo_beneficiaries ngo_beneficiaries[]
   ngo_categories    ngo_categories[]
   ngo_locations     ngo_locations[]
@@ -166,29 +159,53 @@ model ngos {
 
 ---
 
-## 6) NGO API (List + Filters)
+## 6) NGO Routes (New Modular Structure)
 
 **File:** `d:\DONATEWEB\backend\src\routes\ngo.routes.js`
+
+**What it does:**
+- Collects all NGO CRUD routes
+- Splits logic into modular files
+
+```js
+import { Router } from "express";
+import { registerNgoDeleteRoutes } from "./ngos/ngos.delete.js";
+import { registerNgoGetRoutes } from "./ngos/ngos.get.js";
+import { registerNgoPatchRoutes } from "./ngos/ngos.patch.js";
+import { registerNgoPostRoutes } from "./ngos/ngos.post.js";
+
+const router = Router();
+
+registerNgoGetRoutes(router);
+registerNgoPostRoutes(router);
+registerNgoPatchRoutes(router);
+registerNgoDeleteRoutes(router);
+
+export default router;
+```
+
+---
+
+## 7) NGO API (List + Filters + Optional Details)
+
+**File:** `d:\DONATEWEB\backend\src\routes\ngos\ngos.get.js`
 
 **Endpoint:** `GET /api/ngos`
 
 **Features:**
 - Filters: city, verified, category, search
-- Pagination: limit, offset
+- Optional details: `?include=details`
+- Returns categories (and beneficiaries if include=details)
 
 ```js
-// GET /api/ngos?city=&verified=&search=&category=&limit=&offset=
-router.get('/', async (req, res, next) => {
+// GET /api/ngos?city=&verified=&search=&category=&include=
+router.get("/", async (req, res, next) => {
   const city = req.query.city ? String(req.query.city) : undefined;
   const search = req.query.search ? String(req.query.search) : undefined;
   const category = req.query.category ? String(req.query.category) : undefined;
   const verified = toBool(req.query.verified);
 
-  const limitRaw = Number(req.query.limit);
-  const offsetRaw = Number(req.query.offset);
-
-  const take = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 100) : 20;
-  const skip = Number.isFinite(offsetRaw) ? Math.max(offsetRaw, 0) : 0;
+  const includeDetails = req.query.include === "details";
 
   const where = {
     ...(city && { city: { equals: city, mode: "insensitive" } }),
@@ -210,8 +227,6 @@ router.get('/', async (req, res, next) => {
   const ngos = await prisma.ngos.findMany({
     where,
     orderBy: { id: "asc" },
-    take,
-    skip,
     select: {
       id: true,
       name: true,
@@ -219,7 +234,12 @@ router.get('/', async (req, res, next) => {
       city: true,
       image_url: true,
       verified: true,
+      created_at: true,
+      updated_at: true,
       ngo_categories: { select: { categories: { select: { name: true } } } },
+      ...(includeDetails && {
+        ngo_beneficiaries: { select: { beneficiaries: { select: { name: true } } } },
+      }),
     },
   });
 
@@ -230,7 +250,12 @@ router.get('/', async (req, res, next) => {
     city: n.city,
     image_url: n.image_url || null,
     verified: Boolean(n.verified),
+    created_at: n.created_at,
+    updated_at: n.updated_at,
     categories: n.ngo_categories.map((x) => x.categories.name),
+    beneficiaries: includeDetails
+      ? n.ngo_beneficiaries.map((x) => x.beneficiaries.name)
+      : [],
   }));
 
   return res.json(payload);
@@ -239,19 +264,14 @@ router.get('/', async (req, res, next) => {
 
 ---
 
-## 7) NGO API (Detail + CRUD)
+## 8) NGO API (Detail)
 
-**File:** `d:\DONATEWEB\backend\src\routes\ngo.routes.js`
+**File:** `d:\DONATEWEB\backend\src\routes\ngos\ngos.get.js`
 
-**Endpoints:**
-- `GET /api/ngos/:id`
-- `POST /api/ngos`
-- `PATCH /api/ngos/:id`
-- `DELETE /api/ngos/:id`
+**Endpoint:** `GET /api/ngos/:id`
 
 ```js
-// GET /api/ngos/:id
-router.get('/:id', async (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
   const id = parseId(req.params.id);
   if (id == null) return res.status(400).json({ message: "Invalid id" });
 
@@ -263,9 +283,18 @@ router.get('/:id', async (req, res, next) => {
   if (!ngo) return res.status(404).json({ message: "NGO not found" });
   return res.json(formatNgoDetail(ngo));
 });
+```
 
-// POST /api/ngos
-router.post('/', async (req, res, next) => {
+---
+
+## 9) NGO API (Create)
+
+**File:** `d:\DONATEWEB\backend\src\routes\ngos\ngos.post.js`
+
+**Endpoint:** `POST /api/ngos`
+
+```js
+router.post("/", async (req, res, next) => {
   const input = parseNgoCreate(req.body);
   if (!input.ok) return res.status(400).json({ message: input.error });
 
@@ -280,7 +309,112 @@ router.post('/', async (req, res, next) => {
 
 ---
 
-## 8) Meta Endpoints (Categories + Beneficiaries)
+## 10) NGO API (Update + Verify Toggle)
+
+**File:** `d:\DONATEWEB\backend\src\routes\ngos\ngos.patch.js`
+
+**Endpoints:**
+- `PATCH /api/ngos/:id`
+- `PATCH /api/ngos/:id/verify`
+
+```js
+router.patch("/:id", async (req, res, next) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.status(400).json({ message: "Invalid id" });
+
+  const data = buildNgoUpdate(req.body);
+  const updated = await prisma.ngos.update({
+    where: { id },
+    data,
+    select: ngoSelectWithRelations(),
+  });
+
+  return res.json(formatNgoDetail(updated));
+});
+
+router.patch("/:id/verify", async (req, res, next) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.status(400).json({ message: "Invalid id" });
+
+  const nextValue = await resolveVerifyToggle(id, req.body?.verified);
+  const updated = await prisma.ngos.update({
+    where: { id },
+    data: { verified: nextValue },
+    select: { id: true, verified: true },
+  });
+
+  return res.json(updated);
+});
+```
+
+---
+
+## 11) NGO API (Delete)
+
+**File:** `d:\DONATEWEB\backend\src\routes\ngos\ngos.delete.js`
+
+**Endpoint:** `DELETE /api/ngos/:id`
+
+```js
+router.delete("/:id", async (req, res, next) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.status(400).json({ message: "invalid id" });
+
+  await prisma.ngos.delete({ where: { id } });
+  return res.json({ message: "NGO deleted" });
+});
+```
+
+---
+
+## 12) NGO Helpers (Data Mapping & Validation)
+
+**File:** `d:\DONATEWEB\backend\src\routes\ngos\ngos.helpers.js`
+
+**What it does:**
+- Parses ids and booleans
+- Builds create/update payloads
+- Normalizes NGO detail format
+- Toggles verification
+
+```js
+export function parseNgoCreate(body) {
+  const {
+    name,
+    description,
+    city,
+    phone,
+    image_url,
+    verified = false,
+    categoryIds = [],
+    beneficiaryIds = [],
+    locations = [],
+  } = body;
+
+  if (!name || typeof name !== "string") {
+    return { ok: false, error: "name is required" };
+  }
+
+  return {
+    ok: true,
+    data: {
+      name,
+      description,
+      city,
+      phone,
+      image_url,
+      verified: Boolean(verified),
+      ngo_categories: buildCategoryLinks(categoryIds),
+      ngo_beneficiaries: buildBeneficiaryLinks(beneficiaryIds),
+      ngo_locations: buildLocationLinks(locations),
+    },
+  };
+}
+```
+
+---
+
+## 13) Meta Endpoints (Categories + Beneficiaries)
 
 **Files:**
 - `d:\DONATEWEB\backend\src\routes\category.routes.js`
@@ -298,16 +432,37 @@ router.get("/", async (req, res, next) => {
 // GET /api/beneficiaries
 router.get("/", async (req, res, next) => {
   const beneficiaries = await prisma.beneficiaries.findMany({
-    orderBy: { id : "asc"},
+    orderBy: { id: "asc" },
   });
-
   res.json(beneficiaries);
 });
 ```
 
 ---
 
-## 9) React Router Structure
+## 14) Locations Endpoint (By NGO)
+
+**File:** `d:\DONATEWEB\backend\src\routes\location.routes.js`
+
+**Endpoint:** `GET /api/locations?ngoId=1`
+
+```js
+  router.get("/", async (req, res, next) => {
+    const ngoId = parseId(req.query.ngoId);
+    const where = ngoId == null ? {} : { ngo_id : ngoId };
+
+    const locations = await prisma.ngo_locations.findMany({
+      where,
+      orderBy: { id: "asc" },
+    });
+
+    res.json(locations);
+  });
+```
+
+---
+
+## 15) React Router Structure
 
 **File:** `d:\DONATEWEB\frontend\src\App.js`
 
@@ -319,8 +474,6 @@ router.get("/", async (req, res, next) => {
 - `/admin` Admin Dashboard
 
 ```js
-import { Routes, Route } from 'react-router-dom';
-
 <Routes>
   <Route path="/" element={<Home />}/>
   <Route path="/browse" element={<Browse />}/>
@@ -332,11 +485,12 @@ import { Routes, Route } from 'react-router-dom';
 
 ---
 
-## 10) API Layer in React (Axios)
+## 16) API Layer in React (Axios)
 
 **Files:**
 - `d:\DONATEWEB\frontend\src\api\http.js`
 - `d:\DONATEWEB\frontend\src\api\ngoApi.js`
+- `d:\DONATEWEB\frontend\src\api\metaApi.js`
 
 ```js
 // http.js
@@ -360,9 +514,15 @@ export const deleteNgo = (id) => api.delete(`/ngos/${id}`);
 export const toggleVerifyNgo = (id) => api.patch(`/ngos/${id}/verify`);
 ```
 
+```js
+// metaApi.js
+export const getCategories = () => api.get("/categories");
+export const getBeneficiaries = () => api.get("/beneficiaries");
+```
+
 ---
 
-## 11) Browse Page Filters (Real UI)
+## 17) Browse Page Filters (Real UI)
 
 **File:** `d:\DONATEWEB\frontend\src\pages\Browse.jsx`
 
@@ -387,7 +547,7 @@ const list = await getNgos({
 
 ---
 
-## 12) Details Page (NGO Detail View)
+## 18) Details Page (NGO Detail View)
 
 **File:** `d:\DONATEWEB\frontend\src\pages\Details.jsx`
 
@@ -410,7 +570,7 @@ useEffect(() => {
 
 ---
 
-## 13) Admin Login (Demo Auth)
+## 19) Admin Login (Demo Auth)
 
 **File:** `d:\DONATEWEB\frontend\src\pages\AdminLogin.jsx`
 
@@ -419,7 +579,7 @@ useEffect(() => {
 - Password: `6767`
 
 ```js
-if(email === 'admin@login.com' && password === "6767") {
+if (email === 'admin@login.com' && password === "6767") {
   localStorage.setItem("AdminToken", "demo-token");
   navigate("/admin");
 } else {
@@ -429,14 +589,14 @@ if(email === 'admin@login.com' && password === "6767") {
 
 ---
 
-## 14) Admin CRUD (Add, Edit, Delete, Verify)
+## 20) Admin CRUD (Add, Edit, Delete, Verify)
 
 **File:** `d:\DONATEWEB\frontend\src\pages\Admin.jsx`
 
 **What happens:**
 - Loads list of NGOs
 - Opens modal to create/edit
-- Calls API for CRUD
+- Calls API for CRUD and verify
 
 ```js
 const list = await getNgos();
@@ -450,7 +610,7 @@ await toggleVerifyNgo(ngo.id);
 
 ---
 
-## 15) Step-by-Step Data Flow (Real App)
+## 21) Step-by-Step Data Flow (Real App)
 
 1. User opens Home or Browse page.
 2. React triggers Axios call in `frontend/src/api/*`.
@@ -461,7 +621,7 @@ await toggleVerifyNgo(ngo.id);
 
 ---
 
-## 16) Quick Testing Checklist
+## 22) Quick Testing Checklist
 
 - Backend health check: `GET /api/health` -> `{ ok: true }`
 - Browse page loads NGOs
@@ -469,17 +629,18 @@ await toggleVerifyNgo(ngo.id);
 - Details page opens for one NGO
 - Admin login works
 - CRUD updates appear in list
+- Verify toggle updates status
 
 ---
 
-## 17) Summary (Teacher-Friendly)
+## 23) Summary (Teacher-Friendly)
 
 - Backend: Node/Express REST API with Prisma + PostgreSQL.
 - Frontend: React SPA with routing, filters, admin dashboard.
+- New structure: NGO routes are modular (`ngos.get.js`, `ngos.post.js`, etc.).
 - Data flow: UI -> API -> DB -> clean JSON -> UI.
 - Clear separation of concerns makes code easy to test and maintain.
 
 ---
 
 End of presentation.
-

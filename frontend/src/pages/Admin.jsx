@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+// Page: Admin dashboard to manage NGOs (CRUD + verify).
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "../components/Modal";
 import NgoForm from "../components/Form";
@@ -10,9 +11,11 @@ import {
   updateNgo,
   deleteNgo,
   toggleVerifyNgo,
-} from "../api/ngoApi";
+} from "../services/ngo.service";
 
-import { getCategories, getBeneficiaries } from "../api/metaApi";
+import { getCategories, getBeneficiaries } from "../services/meta.service";
+import { clearTokens } from "../utils/authStorage";
+import { useRequireAdmin } from "../hooks/useRequireAdmin";
 
 function Admin() {
   const [ngos, setNgos] = useState([]);
@@ -27,45 +30,58 @@ function Admin() {
 
   const navigate = useNavigate();
 
-  async function loadMeta() {
+  const isAuthed = useRequireAdmin();
+  const handleLogout = useCallback(() => {
+    clearTokens();
+    navigate("/admin/login");
+  }, [navigate]);
+
+  const loadMeta = useCallback(async () => {
     setErr("");
     try {
       const [cates, bens] = await Promise.all([getCategories(), getBeneficiaries()]);
       setCategories(asData(cates));
       setBeneficiaries(asData(bens));
     } catch (e) {
+      if (e?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
       setErr(e.message);
     }
-  }
+  }, [handleLogout]);
 
-  async function loadList() {
+  //display lists of data 
+  const loadList = useCallback(async () => {
     setLoading(true);
     setErr("");
     try {
       const list = await getNgos();
       setNgos(asData(list));
     } catch (e) {
+      if (e?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
       setErr(e.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [handleLogout]);
 
   useEffect(() => {
-    const token = localStorage.getItem("AdminToken");
-    if (!token) {
-      navigate("/admin/login");
-      return;
-    }
+    if (!isAuthed) return;
     loadMeta();
     loadList();
-  }, [navigate]);
+  }, [isAuthed, loadList, loadMeta]);
 
+  //handle on add NGO button in dashboard
   function openAdd() {
     setEditingNgo(null);
     setOpen(true);
   }
 
+  //edit button can work the same as add NGOs
   async function openEdit(ngo) {
     setErr("");
     setLoading(true);
@@ -74,12 +90,17 @@ function Admin() {
       setEditingNgo(asData(full));
       setOpen(true);
     } catch (e) {
+      if (e?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
       setErr(e.message);
     } finally {
       setLoading(false);
     }
   }
 
+  //delete data by which show by organization name
   async function handleDelete(ngo) {
     const ok = window.confirm(`Delete: ${ngo.name} ?`);
     if (!ok) return;
@@ -88,15 +109,24 @@ function Admin() {
       await deleteNgo(ngo.id);
       loadList();
     } catch (e) {
+      if (e?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
       alert(e.message);
     }
   }
 
+  //for verify button depend on Click by admin
   async function handleVerify(ngo) {
     try {
       await toggleVerifyNgo(ngo.id);
       loadList();
     } catch (e) {
+      if (e?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
       alert(e.message);
     }
   }
@@ -112,6 +142,10 @@ function Admin() {
       setEditingNgo(null);
       loadList();
     } catch (e) {
+      if (e?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
       alert(e.message);
     }
   }
@@ -127,21 +161,17 @@ function Admin() {
     return response?.data || response || [];
   }
 
-  function handleLogout() {
-    localStorage.removeItem("AdminToken");
-    navigate("/admin/login");
-  }
 
   return (
     <div className="space-y-6">
-      {/* Header card */}
-      <div className="rounded-md border-2 border-black bg-white p-6 md:p-8 shadow-sm">
+      {/* For admin Header card */}
+      <div className="card p-6 md:p-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="mt-2 text-2xl md:text-3xl font-bold text-slate-900">
               Admin Dashboard
             </h1>
-            <p className="mt-1 text-sm text-slate-800">
+            <p className="mt-1 text-sm text-slate-600">
               Manage NGOs, edit details, and verify profiles.
             </p>
           </div>
@@ -149,14 +179,14 @@ function Admin() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleLogout}
-              className="px-4 py-2 rounded-lg border-2 border-orange-400 bg-orange-300 text-white text-sm font-semibold"
+              className="btn-outline text-sm"
             >
               Logout
             </button>
 
             <button
               onClick={openAdd}
-              className="px-4 py-2 rounded-lg border-2 border-blue-400 bg-blue-300 text-white text-sm font-semibold"
+              className="btn-primary text-sm"
             >
               + Add NGO
             </button>
@@ -164,12 +194,12 @@ function Admin() {
         </div>
       </div>
 
-      {err && <div className="text-sm text-brand-red">{err}</div>}
+      {err && <div className="text-sm text-red-600">{err}</div>}
 
-      {/* Table */}
-      <div className="overflow-x-auto border-2 border-brand-soft rounded-lg shadow-sm bg-white">
-        <table className="w-full text-sm text-left text-brand-ink/80">
-          <thead className="text-xs text-slate-900 uppercase bg-blue-50 border-b border-blue-100">
+      {/* For admin Table */}
+      <div className="overflow-x-auto card">
+        <table className="w-full text-sm text-left text-slate-700">
+          <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">City</th>
@@ -182,7 +212,7 @@ function Admin() {
           <tbody className="bg-white">
             {loading ? (
               <tr>
-                <td className="px-4 py-4 font-medium text-white">Loading...</td>
+                <td className="px-4 py-4 font-medium text-slate-600">Loading...</td>
                 <td className="px-4 py-4" />
                 <td className="px-4 py-4" />
                 <td className="px-4 py-4" />
@@ -196,7 +226,7 @@ function Admin() {
               </tr>
             ) : (
               ngos.map((ngo) => (
-                <tr key={ngo.id} className="border-t border-slate-200">
+                <tr key={ngo.id} className="border-t border-slate-100">
                   <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">
                     {ngo.name}
                   </td>
@@ -207,8 +237,8 @@ function Admin() {
                       onClick={() => handleVerify(ngo)}
                       className={
                         ngo.verified
-                          ? "inline-flex font-semibold items-center gap-1 text-white border border-green-400 bg-green-300 rounded-xl text-xs px-2 py-1"
-                          : "inline-flex font-semibold items-center gap-1 text-white border border-red-400 bg-red-300 rounded-xl text-xs px-2 py-1"
+                          ? "inline-flex font-semibold items-center gap-1 text-green-700 border border-green-200 bg-green-50 rounded-xl text-xs px-2 py-1"
+                          : "inline-flex font-semibold items-center gap-1 text-rose-700 border border-rose-200 bg-rose-50 rounded-xl text-xs px-2 py-1"
                       }
                     >
                       {ngo.verified ? "Verified" : "Unverified"}
@@ -217,23 +247,23 @@ function Admin() {
                   <td className="px-4 py-3">
                     {formatDate(
                       ngo.updated_at ||
-                        ngo.updatedAt ||
-                        ngo.updated ||
-                        ngo.created_at ||
-                        ngo.createdAt
+                      ngo.updatedAt ||
+                      ngo.updated ||
+                      ngo.created_at ||
+                      ngo.createdAt
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => openEdit(ngo)}
-                        className="px-3 py-1 text-slate-950 rounded-full border-2 border-blue-400 bg-blue-300 text-xs font-semibold"
+                        className="px-3 py-1 text-slate-900 rounded-full border border-slate-300 bg-white text-xs font-semibold hover:bg-slate-100"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(ngo)}
-                        className="px-3 py-1 text-slate-950 rounded-full border-2 border-red-400 bg-red-300 text-xs font-semibold"
+                        className="px-3 py-1 text-rose-700 rounded-full border border-rose-200 bg-rose-50 text-xs font-semibold hover:bg-rose-100"
                       >
                         Delete
                       </button>
@@ -246,6 +276,7 @@ function Admin() {
         </table>
       </div>
 
+      {/* For admin Modal */}
       <Modal open={open} title={editingNgo ? "Edit NGO" : "Add NGO"} onClose={() => setOpen(false)}>
         <NgoForm
           initial={editingNgo}
