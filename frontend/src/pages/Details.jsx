@@ -1,16 +1,22 @@
-// Page: Detailed NGO profile with donation and contact info.
+// Details page flow:
+// Step 1: Read NGO id from route params.
+// Step 2: Fetch NGO detail from API.
+// Step 3: Build derived UI fields (image, map link, chips).
+// Step 4: Render loading, error, or final detail layout.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getNgoById } from "../services/ngo.service";
 import Chip from "../components/common/Chip";
 
-
 function Details() {
+  // Step 1: Dynamic route param from /ngos/:id.
   const { id } = useParams();
+  // Request state.
   const [ngo, setNgo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
+  // Step 2: Refetch whenever route id changes.
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -26,14 +32,17 @@ function Details() {
     load();
   }, [id]);
 
+  // Step 3A: Normalize map link from multiple possible payload shapes.
   const mapLink = useMemo(() => {
     return ngo?.map_link || ngo?.map_links?.[0] || ngo?.locations?.[0]?.map_link;
   }, [ngo]);
 
+  // Step 3B: Fallback image keeps the page presentable when API has no image.
   const imageUrl =
     ngo?.image_url ||
     "https://i.pinimg.com/1200x/a1/a6/d0/a1a6d07762619ed6d38e11269f573d32.jpg";
 
+  // Step 3C: Normalize relation arrays for rendering chip components.
   const categories = Array.isArray(ngo?.categories) ? ngo.categories : [];
   const beneficiaries = Array.isArray(ngo?.beneficiaries) ? ngo.beneficiaries : [];
 
@@ -196,38 +205,6 @@ function Details() {
 
         {/* Right: contact card */}
         <div className="space-y-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-bold text-slate-950">Donate now</h3>
-            <p className="mt-2 text-sm text-slate-800">
-              Reach the organization directly to confirm donation details.
-            </p>
-            <div className="mt-4 grid gap-2">
-              {ngo.phone ? (
-                <a
-                  href={`tel:${ngo.phone}`}
-                  className="btn-primary text-sm"
-                >
-                  Call to donate
-                </a>
-              ) : (
-                <div className="text-xs text-slate-900">No phone number available.</div>
-              )}
-
-              {mapLink ? (
-                <a
-                  href={mapLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-outline text-sm"
-                >
-                  Visit on Google Maps
-                </a>
-              ) : (
-                <div className="text-xs text-slate-900">No map link available.</div>
-              )}
-            </div>
-          </div>
-
           <div className="card p-6">
             <h3 className="text-lg font-bold text-slate-950">Contact</h3>
 

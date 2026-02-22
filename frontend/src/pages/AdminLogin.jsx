@@ -1,4 +1,8 @@
-// Page: Admin login form that stores JWT tokens on success.
+// AdminLogin page flow:
+// Step 1: Capture email/password from form.
+// Step 2: Call login endpoint.
+// Step 3: Save access + refresh tokens.
+// Step 4: Redirect to /admin on success.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../services/admin.service";
@@ -7,11 +11,13 @@ import { setAccessToken, setRefreshToken } from "../utils/authStorage";
 function AdminLogin() {
     const navigate = useNavigate();
 
+    // Controlled form + request status.
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [err, setErr] = useState("");
     const [loading, setLoading] = useState(false);
 
+    // Main auth action for this screen.
     async function handleSubmit(event) {
         event.preventDefault();
         setErr("");
@@ -23,6 +29,7 @@ function AdminLogin() {
 
         setLoading(true);
         try {
+            // Step 2: Request JWT tokens from backend.
             const res = await loginAdmin({ email, password });
             const token = res?.data?.token;
             const refreshToken = res?.data?.refreshToken;
@@ -30,10 +37,13 @@ function AdminLogin() {
                 setErr("Login failed. No token returned.");
                 return;
             }
+            // Step 3: Persist tokens for authenticated API calls.
             setAccessToken(token);
             setRefreshToken(refreshToken);
+            // Step 4: Enter protected admin dashboard.
             navigate("/admin");
         } catch (e) {
+            // Show backend message when available.
             const message = e?.response?.data?.message || "Invalid email or password.";
             setErr(message);
         } finally {

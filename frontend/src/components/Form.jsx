@@ -1,4 +1,8 @@
-// Form: Admin create/edit NGO form with validation and helper logic.
+// NGO Form flow:
+// Step 1: Build form state (empty for create, mapped values for edit).
+// Step 2: Let admin edit fields, categories, beneficiaries, and locations.
+// Step 3: Convert selected names to ids before submit.
+// Step 4: Send normalized payload back to parent (Admin page).
 import { useEffect, useMemo, useState } from "react";
 
 const EMPTY_FORM = {
@@ -12,13 +16,14 @@ const EMPTY_FORM = {
   locations: [{ link: "" }],
 };
 
+// Step 1A: Convert API NGO detail into the local form shape used by this component.
 function buildInitialForm(initial) {
   const locations =
     Array.isArray(initial.locations) && initial.locations.length
       ? initial.locations.map((loc) => ({ link: toLink(loc) }))
       : initial.map_link
-      ? [{ link: initial.map_link }]
-      : [{ link: "" }];
+        ? [{ link: initial.map_link }]
+        : [{ link: "" }];
 
   return {
     ...EMPTY_FORM,
@@ -33,52 +38,61 @@ function buildInitialForm(initial) {
   };
 }
 
+// Helper: support location entries as string or object.
 function toLink(loc) {
   if (typeof loc === "string") return loc;
   return loc?.link || "";
 }
 
-function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
+// Reusable form used by both "Add NGO" and "Edit NGO" actions.
+function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmitting = false }) {
   const [form, setForm] = useState(EMPTY_FORM);
 
+  // Step 1B: When editing, pre-fill the form with existing NGO data.
   useEffect(() => {
     if (!initial) return;
     setForm(buildInitialForm(initial));
   }, [initial]);
 
+  // Step 2A: Build display names for category chips.
   const categoryNames = useMemo(() => {
     return Array.isArray(categories) && categories.length
       ? categories.map((cate) => cate.name || cate)
       : [
-          "Education",
-          "Healthcare",
-          "Food",
-          "Clothing",
-          "Enviroment",
-          "Women Empowerment",
-          "Disaster Relief",
-          "Animal Welface",
-        ];
+        "Education",
+        "Healthcare",
+        "Food",
+        "Clothing",
+        "Enviroment",
+        "Women Empowerment",
+        "Disaster Relief",
+        "Animal Welface",
+      ];
   }, [categories]);
 
+  // Step 2B: Build display names for beneficiary chips.
   const beneficiaryNames = useMemo(() => {
     return Array.isArray(beneficiaries) && beneficiaries.length
       ? beneficiaries.map((bene) => bene.name || bene)
       : ["Children", "Elderly", "Community", "Women", "Animal"];
   }, [beneficiaries]);
 
+  // Step 3A: Name -> id map for category ids expected by backend.
   const categoryNameToId = useMemo(() => {
     return new Map((categories || []).map((cate) => [cate.name, cate.id]));
   }, [categories]);
 
+  // Step 3B: Name -> id map for beneficiary ids expected by backend.
   const beneficiaryNameToId = useMemo(() => {
     return new Map((beneficiaries || []).map((bene) => [bene.name, bene.id]));
   }, [beneficiaries]);
 
+  // Generic text/select field updater.
   function updateField(key) {
     return (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
+  // Multi-select behavior for categories.
   function toggleCategory(name) {
     setForm((prev) => ({
       ...prev,
@@ -88,6 +102,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
     }));
   }
 
+  // Single-select behavior for beneficiaries.
   function toggleBeneficiary(name) {
     setForm((prev) => ({
       ...prev,
@@ -95,22 +110,25 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
     }));
   }
 
+  // Update a specific location link row.
   function updateLocation(index) {
     return (e) => {
       const value = e.target.value;
-    setForm((prev) => ({
-      ...prev,
-      locations: prev.locations.map((loc, i) =>
-        i === index ? { ...loc, link: value } : loc
-      ),
-    }));
-  };
+      setForm((prev) => ({
+        ...prev,
+        locations: prev.locations.map((loc, i) =>
+          i === index ? { ...loc, link: value } : loc
+        ),
+      }));
+    };
   }
 
+  // Add one more location input row.
   function addLocation() {
-    setForm((prev) => ({ ...prev, locations: [...prev.locations, { link: "" }]}));
+    setForm((prev) => ({ ...prev, locations: [...prev.locations, { link: "" }] }));
   }
 
+  // Remove one location row, but keep at least one input visible.
   function removeLocation(index) {
     setForm((prev) => {
       const next = prev.locations.filter((_, i) => i !== index);
@@ -118,6 +136,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
     });
   }
 
+  // Step 4: Validate and submit normalized payload to parent.
   function handleSubmit(event) {
     event.preventDefault();
 
@@ -145,7 +164,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
     });
   }
 
-
+  // Render form fields and action buttons.
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg p-5 md:p-6">
       <div className="flex items-start justify-between gap-3">
@@ -343,15 +362,17 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit }) {
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 btn-outline text-sm"
+          disabled={isSubmitting}
+          className="flex-1 btn-outline text-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="flex-1 btn-primary text-sm"
+          disabled={isSubmitting}
+          className="flex-1 btn-primary text-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Save
+          {isSubmitting ? "Saving..." : "Save"}
         </button>
       </div>
     </form>

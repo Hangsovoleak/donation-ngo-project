@@ -1,4 +1,5 @@
 // Common UI component: Skeleton loading card
+// using it in NGOCard.jsx to show skeleton while loading
 function SkeletonCard({ keyId }) {
     return (
         <div

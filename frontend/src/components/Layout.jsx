@@ -1,8 +1,12 @@
 // Layout: shared header/nav/footer wrapper for all pages.
 import { NavLink } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Footer from "./Footer";
 
 function Layout({ children }) {
+  const location = useLocation();
+  const isAdminDashboard = location.pathname === "/admin";
+
   return (
     <div className="min-h-screen text-slate-900">
       <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/80 backdrop-blur">
@@ -39,8 +43,10 @@ function Layout({ children }) {
         </div>
       </header>
 
-      <main className="max-w-screen-xl mx-auto px-4 py-10">{children}</main>
-      <Footer />
+      <main className={isAdminDashboard ? "" : "max-w-screen-xl mx-auto px-4 py-10"}>
+        {children}
+      </main>
+      {!isAdminDashboard ? <Footer /> : null}
     </div>
   );
 }

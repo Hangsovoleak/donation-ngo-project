@@ -13,7 +13,7 @@ function HowItWorks() {
                 </p>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-2 items-center">
+            <div className="grid gap-10 lg:grid-cols-2 items-center">
                 {/* Animated GIF Section */}
                 <div className="order-2 lg:order-1">
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl">
@@ -26,7 +26,7 @@ function HowItWorks() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                     </div>
                     <p className="mt-4 text-xs text-center text-slate-500 italic">
-                        Visual guide: Browse → Select → Donate → Make Impact
+                        Using this website: Browse → Select → Donate → Make Impact
                     </p>
                 </div>
 

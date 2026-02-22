@@ -4,6 +4,7 @@ import { Building2, Users, TrendingUp } from "lucide-react";
 function ImpactStats() {
     return (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            
             <div className="card p-6 text-center hover:scale-105 transition-transform">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 mb-4">
                     <Building2 className="text-blue-600" size={32} />
@@ -17,7 +18,7 @@ function ImpactStats() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-green-200 mb-4">
                     <Users className="text-green-600" size={32} />
                 </div>
-                <div className="text-3xl font-bold gradient-text-accent mb-2">5K+</div>
+                <div className="text-3xl font-bold gradient-text-accent mb-2">500+</div>
                 <div className="text-sm font-semibold text-slate-700">Lives Impacted</div>
                 <p className="text-xs text-slate-500 mt-2">People helped through donations</p>
             </div>

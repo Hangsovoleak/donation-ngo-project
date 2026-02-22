@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
-
 // Home page component: Hero section with search
+// using it in HomePage.jsx to display hero section
 function HeroSection({ search, setSearch, onSearch, onBrowseAll }) {
     return (
         <section className="relative overflow-hidden card">
@@ -38,9 +37,6 @@ function HeroSection({ search, setSearch, onSearch, onBrowseAll }) {
                             <button onClick={onSearch} className="btn-primary">
                                 Search
                             </button>
-                            <Link to="/browse" className="btn-outline">
-                                Browse all
-                            </Link>
                         </div>
                     </div>
                 </div>

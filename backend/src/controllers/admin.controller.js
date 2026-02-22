@@ -1,51 +1,55 @@
+// Admin auth controller flow:
+// Step 1: Validate incoming auth payloads.
+// Step 2: Verify credentials or refresh token.
+// Step 3: Issue JWT access/refresh tokens.
+// Step 4: Return minimal auth responses for frontend.
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/tokens.js";
 import { validateAdminCredentials } from "../services/admin.service.js";
 
 // POST /api/admin/login
 export function loginAdminController(req, res, next) {
   try {
-    //create one place for storing data of admin
+    // Step 1: Read credentials from request body.
     const { email, password } = req.body || {};
 
-    //if both of email and password are null let's display: email & psw are required
+    // Step 1B: Basic required-field validation.
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    //if correct let's define short const and check both of email & psw the same as what we set or not
+    // Step 2: Validate admin credentials from env-configured values.
     const ok = validateAdminCredentials(email, password);
     if (!ok) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    //accept it with accessToken which combine by using JWT
+    // Step 3: Issue short-lived access token and long-lived refresh token.
     const accessToken = signAccessToken({ role: "admin", email });
-    //and get refresh by time we set up so it will be safety and strong
     const refreshToken = signRefreshToken({ role: "admin", email });
-    //showing with password as string of accessToken and refreshToken
+    // Step 4: Return tokens expected by frontend auth flow.
     return res.json({ token: accessToken, refreshToken });
   } catch (err) {
-    next(err); //display error
+    next(err);
   }
 }
 
 // POST /api/admin/refresh
 export function refreshAdminController(req, res) {
-  //create one place for storing refresh password of refreshToken as String
+  // Step 1: Read refresh token from request body.
   const { refreshToken } = req.body || {};
-  //if refreshToken undefind let's display message
   if (!refreshToken) {
     return res.status(401).json({ message: "Missing refresh token" });
   }
 
   try {
-    //create payload for claims which statement about an entity like typically, the user
+    // Step 2: Verify refresh token signature and claims.
     const payload = verifyRefreshToken(refreshToken);
+    // Step 3: Issue a new access token.
     const accessToken = signAccessToken({ role: "admin", email: payload.email });
-    //return accessToken and response it come
+    // Step 4: Return refreshed access token.
     return res.json({ token: accessToken });
   } catch (err) {
-    //if get the wrong password of refresh token
+    // Invalid/expired refresh token.
     return res.status(401).json({ message: "Invalid refresh token" });
   }
 }
