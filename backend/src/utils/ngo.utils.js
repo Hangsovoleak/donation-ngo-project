@@ -1,6 +1,7 @@
 // Utilities for NGO payload shaping and link building.
 
 export function ngoSelectWithRelations() {
+  //select fields for NGO entities and relations
   return {
     id: true,
     name: true,
@@ -18,6 +19,7 @@ export function ngoSelectWithRelations() {
 }
 
 export function formatNgoDetail(ngo) {
+  //map NGO locations to return object
   const mapLinks = ngo.ngo_locations.map((loc) => loc.link);
 
   return {
@@ -39,6 +41,7 @@ export function formatNgoDetail(ngo) {
 }
 
 export function parseNgoCreate(body) {
+  //parse NGO create payload and return object
   const {
     name,
     description,
@@ -51,6 +54,7 @@ export function parseNgoCreate(body) {
     locations = [],
   } = body || {};
 
+  //validate NGO create payload
   if (!name || typeof name !== "string") {
     return { ok: false, error: "name is required" };
   }
@@ -72,6 +76,7 @@ export function parseNgoCreate(body) {
 }
 
 export function buildNgoUpdate(body) {
+  //build NGO update payload and return object using for NGO update
   const {
     name,
     description,
@@ -84,6 +89,7 @@ export function buildNgoUpdate(body) {
     locations,
   } = body || {};
 
+  //build NGO update payload and return object using for NGO update
   return {
     ...(name !== undefined && { name }),
     ...(description !== undefined && { description }),
@@ -112,18 +118,21 @@ export function buildNgoUpdate(body) {
   };
 }
 
+//build NGO category links and return object using for NGO create
 function buildCategoryLinks(ids) {
   return Array.isArray(ids) && ids.length
     ? { create: ids.map((id) => ({ category_id: Number(id) })) }
     : undefined;
 }
 
+//build NGO beneficiary links and return object using for NGO update
 function buildBeneficiaryLinks(ids) {
   return Array.isArray(ids) && ids.length
     ? { create: ids.map((id) => ({ beneficiary_id: Number(id) })) }
     : undefined;
 }
 
+//build NGO location links and return object using for NGO update
 function buildLocationLinks(locations) {
   return Array.isArray(locations) && locations.length
     ? { create: locations.map((loc) => ({ link: String(loc.link ?? loc) })) }

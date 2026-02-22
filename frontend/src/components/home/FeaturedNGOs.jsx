@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import NgoCard from "../Card";
+import SkeletonCard from "../common/SkeletonCard";
 
 // Home page component: Featured NGOs section
-function FeaturedNGOs({ ngos, error }) {
+// using it in HomePage.jsx to display featured NGOs
+function FeaturedNGOs({ ngos, error, loading }) {
     return (
         <section className="grid gap-6 lg:grid-cols-4">
             <div className="lg:col-span-4">
@@ -26,9 +28,11 @@ function FeaturedNGOs({ ngos, error }) {
                 {error && <div className="mt-3 text-sm text-red-500">{error}</div>}
 
                 <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {ngos.map((ngo) => (
-                        <NgoCard key={ngo.id} ngo={ngo} />
-                    ))}
+                    {loading
+                        ? [...Array(6)].map((_, i) => (
+                            <SkeletonCard key={`featured-skeleton-${i}`} keyId={`featured-skeleton-${i}`} />
+                        ))
+                        : ngos.map((ngo) => <NgoCard key={ngo.id} ngo={ngo} />)}
                 </div>
             </div>
         </section>

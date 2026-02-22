@@ -1,3 +1,8 @@
+// HTTP client flow:
+// Step 1: Create one shared Axios instance with API base URL.
+// Step 2: Attach access token on every outgoing request.
+// Step 3: On 401, try refresh token once and retry original request.
+// Step 4: If refresh fails, clear tokens and return auth error.
 import axios from "axios";
 import {
   clearTokens,
@@ -6,14 +11,13 @@ import {
   setAccessToken,
 } from "../utils/authStorage";
 
-// Shared API client used by all service files.
-// Keeps base URL + token refresh logic in one place.
+// Step 1: Shared API client used by all frontend service modules.
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach access token to every request
+// Step 2: Add Authorization header automatically when a token exists.
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
@@ -22,10 +26,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-refresh access token on 401 (JWT-only refresh flow)
+// Step 3/4: Refresh flow for expired access tokens.
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
+    // `original` keeps the failed request so we can retry it after refresh.
     const original = err.config;
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
@@ -43,6 +48,7 @@ api.interceptors.response.use(
           return api(original);
         }
       } catch (refreshErr) {
+        // Refresh failed: force sign-out behavior on client.
         clearTokens();
       }
     }

@@ -1,19 +1,14 @@
 // Browse page component: Comprehensive filter panel
+// using it in Browse.jsx to filter NGOs
+//create filterpanel component to filter NGOs
 function FilterPanel({
-    search,
-    setSearch,
-    category,
-    setCategory,
-    city,
-    setCity,
-    verifiedOnly,
-    setVerifiedOnly,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
-    limit,
-    setLimit,
+    search, setSearch,
+    category, setCategory,
+    city, setCity,
+    verifiedOnly, setVerifiedOnly,
+    sortBy, setSortBy,
+    sortOrder, setSortOrder,
+
     availableCategories,
     totalNgos,
     onClearFilters,
@@ -120,11 +115,8 @@ function FilterPanel({
                             }}
                             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-slate-950 text-sm font-semibold rounded-xl outline-none focus:border-slate-400"
                         >
-                            <option value="updated_at">Updated</option>
-                            <option value="created_at">Created</option>
                             <option value="name">Name</option>
                             <option value="city">City</option>
-                            <option value="verified">Verified</option>
                         </select>
                         <select
                             value={sortOrder}
@@ -134,8 +126,8 @@ function FilterPanel({
                             }}
                             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-slate-950 text-sm font-semibold rounded-xl outline-none focus:border-slate-400"
                         >
-                            <option value="desc">Desc</option>
-                            <option value="asc">Asc</option>
+                            <option value="desc">Z - A</option>
+                            <option value="asc">A - Z</option>
                         </select>
                     </div>
                 </div>
@@ -144,24 +136,6 @@ function FilterPanel({
             <div className="mt-4 flex flex-wrap items-center gap-3">
                 <div className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">
                     Found {totalNgos} NGOs
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        Per page
-                    </span>
-                    <select
-                        value={limit}
-                        onChange={(e) => {
-                            setLimit(Number(e.target.value));
-                            onResetPage();
-                        }}
-                        className="px-3 py-2 rounded-full border border-slate-300 text-slate-700 text-sm font-semibold bg-white"
-                    >
-                        <option value={6}>6</option>
-                        <option value={9}>9</option>
-                        <option value={12}>12</option>
-                        <option value={18}>18</option>
-                    </select>
                 </div>
                 {showClearButton && (
                     <button

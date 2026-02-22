@@ -1,6 +1,8 @@
 // Footer: site-wide bottom section with links and disclaimers.
+// using it in App.jsx to display footer
 import { Link } from "react-router-dom";
 
+//display footer
 function Footer() {
 
   return (

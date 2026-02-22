@@ -1,41 +1,100 @@
-// Page: Admin dashboard to manage NGOs (CRUD + verify).
-import { useCallback, useEffect, useState } from "react";
+// Admin page flow:
+// Step 1: Ensure user is authenticated.
+// Step 2: Load metadata (categories/beneficiaries) and NGO list.
+// Step 3: Execute CRUD + verify actions.
+// Step 4: Keep UI responsive with optimistic updates and loading states.
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ShieldCheck, Building2, Pencil, Plus, Trash2, LogOut, BadgeCheck,} from "lucide-react";
 import Modal from "../components/Modal";
 import NgoForm from "../components/Form";
 
-import {
-  getNgos,
-  getNgoById,
-  createNgo,
-  updateNgo,
-  deleteNgo,
-  toggleVerifyNgo,
-} from "../services/ngo.service";
+import { getNgos, getNgoById, createNgo, updateNgo, deleteNgo, toggleVerifyNgo, } from "../services/ngo.service";
 
 import { getCategories, getBeneficiaries } from "../services/meta.service";
 import { clearTokens } from "../utils/authStorage";
 import { useRequireAdmin } from "../hooks/useRequireAdmin";
 
+function ActionButton({ label, tone = "neutral", icon, onClick }) {
+  const toneClass = {
+    create: "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+    update: "border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100",
+    delete: "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100",
+    neutral: "border-slate-300 bg-white text-slate-800 hover:bg-slate-100",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-bold tracking-wide transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClass[tone] || toneClass.neutral}`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function AdminSection({ title, icon, count, onCreate, children }) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700">
+            {icon}
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-slate-900">{title}</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {count} records
+            </p>
+          </div>
+        </div>
+        {onCreate ? (
+          <ActionButton
+            label="POST"
+            tone="create"
+            icon={<Plus size={14} />}
+            onClick={onCreate}
+          />
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function Admin() {
+  // Core dataset displayed on dashboard.
   const [ngos, setNgos] = useState([]);
   const [categories, setCategories] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
 
+  // Request and action status flags.
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [verifyingId, setVerifyingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [saving, setSaving] = useState(false);
 
+  // Modal state for create/edit form.
   const [open, setOpen] = useState(false);
   const [editingNgo, setEditingNgo] = useState(null);
 
   const navigate = useNavigate();
 
+  // Step 1: Redirect unauthenticated users to login.
   const isAuthed = useRequireAdmin();
+
+  // Centralized logout behavior used by 401 handlers.
   const handleLogout = useCallback(() => {
     clearTokens();
     navigate("/admin/login");
   }, [navigate]);
 
+  // Step 2A: Load reference data needed by the NGO form.
   const loadMeta = useCallback(async () => {
     setErr("");
     try {
@@ -51,9 +110,9 @@ function Admin() {
     }
   }, [handleLogout]);
 
-  //display lists of data 
-  const loadList = useCallback(async () => {
-    setLoading(true);
+  // Step 2B: Load NGOs shown in the dashboard list.
+  const loadList = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     setErr("");
     try {
       const list = await getNgos();
@@ -65,26 +124,27 @@ function Admin() {
       }
       setErr(e.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [handleLogout]);
 
+  // Initial admin page load once auth is confirmed.
   useEffect(() => {
     if (!isAuthed) return;
     loadMeta();
     loadList();
   }, [isAuthed, loadList, loadMeta]);
 
-  //handle on add NGO button in dashboard
+  // Step 3A: Open form in create mode.
   function openAdd() {
     setEditingNgo(null);
     setOpen(true);
   }
 
-  //edit button can work the same as add NGOs
+  // Step 3B: Open form in edit mode with full NGO payload.
   async function openEdit(ngo) {
     setErr("");
-    setLoading(true);
+    setEditingId(ngo.id);
     try {
       const full = await getNgoById(ngo.id);
       setEditingNgo(asData(full));
@@ -96,60 +156,115 @@ function Admin() {
       }
       setErr(e.message);
     } finally {
-      setLoading(false);
+      setEditingId(null);
     }
   }
 
-  //delete data by which show by organization name
+  // Step 3C: Optimistic delete with rollback on API failure.
   async function handleDelete(ngo) {
     const ok = window.confirm(`Delete: ${ngo.name} ?`);
     if (!ok) return;
 
+    const previous = ngos;
+    setDeletingId(ngo.id);
+    setNgos((prev) => prev.filter((item) => item.id !== ngo.id));
+
     try {
       await deleteNgo(ngo.id);
-      loadList();
     } catch (e) {
       if (e?.response?.status === 401) {
         handleLogout();
         return;
       }
+      setNgos(previous);
       alert(e.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
-  //for verify button depend on Click by admin
+  // Step 3D: Optimistic verify/unverify toggle.
   async function handleVerify(ngo) {
+    const previousValue = Boolean(ngo.verified);
+    setVerifyingId(ngo.id);
+    setNgos((prev) =>
+      prev.map((item) =>
+        item.id === ngo.id
+          ? {
+            ...item,
+            verified: !previousValue,
+            updated_at: new Date().toISOString(),
+          }
+          : item
+      )
+    );
+
     try {
-      await toggleVerifyNgo(ngo.id);
-      loadList();
+      const response = await toggleVerifyNgo(ngo.id);
+      const payload = asData(response);
+
+      if (typeof payload?.verified === "boolean") {
+        setNgos((prev) =>
+          prev.map((item) =>
+            item.id === ngo.id
+              ? { ...item, verified: payload.verified, updated_at: new Date().toISOString() }
+              : item
+          )
+        );
+      }
     } catch (e) {
       if (e?.response?.status === 401) {
         handleLogout();
         return;
       }
+      setNgos((prev) =>
+        prev.map((item) =>
+          item.id === ngo.id ? { ...item, verified: previousValue } : item
+        )
+      );
       alert(e.message);
+    } finally {
+      setVerifyingId(null);
     }
   }
 
+  // Step 3E: Submit create or update, then sync dashboard state.
   async function handleSubmit(payload) {
+    setSaving(true);
     try {
       if (editingNgo) {
-        await updateNgo(editingNgo.id, payload);
+        const response = await updateNgo(editingNgo.id, payload);
+        const updated = asData(response);
+        setNgos((prev) =>
+          prev.map((item) =>
+            item.id === editingNgo.id
+              ? {
+                ...item,
+                ...updated,
+                updated_at: updated?.updated_at || new Date().toISOString(),
+              }
+              : item
+          )
+        );
       } else {
-        await createNgo(payload);
+        const response = await createNgo(payload);
+        const created = asData(response);
+        setNgos((prev) => [created, ...prev]);
       }
       setOpen(false);
       setEditingNgo(null);
-      loadList();
     } catch (e) {
       if (e?.response?.status === 401) {
         handleLogout();
         return;
       }
       alert(e.message);
+    } finally {
+      setSaving(false);
     }
   }
 
+  // Helpers.
   function formatDate(value) {
     if (!value) return "Never";
     const date = new Date(value);
@@ -161,122 +276,142 @@ function Admin() {
     return response?.data || response || [];
   }
 
+  const verifiedCount = useMemo(
+    () => ngos.filter((ngo) => Boolean(ngo.verified)).length,
+    [ngos]
+  );
 
   return (
-    <div className="space-y-6">
-      {/* For admin Header card */}
-      <div className="card p-6 md:p-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="mt-2 text-2xl md:text-3xl font-bold text-slate-900">
-              Admin Dashboard
-            </h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Manage NGOs, edit details, and verify profiles.
-            </p>
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_35%,_#e2e8f0_100%)] pb-10">
+      <div className="pointer-events-none absolute -left-24 -top-20 h-64 w-64 rounded-full bg-sky-300/25 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-1/3 h-72 w-72 rounded-full bg-indigo-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-emerald-200/30 blur-3xl" />
+      <main className="mx-auto max-w-6xl px-4 pt-8 sm:px-6 sm:pt-10">
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                NGO Dashboard API Control Panel
+              </h1>
+              <p className="mt-1 text-sm font-semibold text-slate-600">
+                Manage NGOs with explicit actions: POST, PUT, DELETE, VERIFY.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <ActionButton
+                label="LOGOUT"
+                tone="neutral"
+                icon={<LogOut size={14} />}
+                onClick={saving ? null : handleLogout}
+              />
+            </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleLogout}
-              className="btn-outline text-sm"
-            >
-              Logout
-            </button>
-
-            <button
-              onClick={openAdd}
-              className="btn-primary text-sm"
-            >
-              + Add NGO
-            </button>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold uppercase tracking-wide sm:grid-cols-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+              Total NGOs: {ngos.length}
+            </div>
+            <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-emerald-800">
+              Verified: {verifiedCount}
+            </div>
+            <div className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sky-800">
+              Categories: {categories.length}
+            </div>
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">
+              Beneficiaries: {beneficiaries.length}
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {err && <div className="text-sm text-red-600">{err}</div>}
+        {err ? (
+          <div className="mb-5 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+            {err}
+          </div>
+        ) : null}
 
-      {/* For admin Table */}
-      <div className="overflow-x-auto card">
-        <table className="w-full text-sm text-left text-slate-700">
-          <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">City</th>
-              <th className="px-4 py-3">Verified</th>
-              <th className="px-4 py-3">Updated</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody className="bg-white">
+        <AdminSection
+          title="Organizations"
+          icon={<Building2 size={18} />}
+          count={ngos.length}
+          onCreate={openAdd}
+        >
+          <div className="space-y-2">
             {loading ? (
-              <tr>
-                <td className="px-4 py-4 font-medium text-slate-600">Loading...</td>
-                <td className="px-4 py-4" />
-                <td className="px-4 py-4" />
-                <td className="px-4 py-4" />
-                <td className="px-4 py-4" />
-              </tr>
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-500">
+                Loading dashboard data...
+              </div>
             ) : ngos.length === 0 ? (
-              <tr>
-                <td className="px-4 py-6 text-slate-900" colSpan={5}>
-                  No NGOs yet. Click “Add NGO” to create one.
-                </td>
-              </tr>
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-500">
+                No NGOs yet. Click POST to create one.
+              </div>
             ) : (
               ngos.map((ngo) => (
-                <tr key={ngo.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">
-                    {ngo.name}
-                  </td>
-                  <td className="px-4 py-3">{ngo.city || "-"}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => handleVerify(ngo)}
-                      className={
-                        ngo.verified
-                          ? "inline-flex font-semibold items-center gap-1 text-green-700 border border-green-200 bg-green-50 rounded-xl text-xs px-2 py-1"
-                          : "inline-flex font-semibold items-center gap-1 text-rose-700 border border-rose-200 bg-rose-50 rounded-xl text-xs px-2 py-1"
-                      }
-                    >
-                      {ngo.verified ? "Verified" : "Unverified"}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatDate(
-                      ngo.updated_at ||
-                      ngo.updatedAt ||
-                      ngo.updated ||
-                      ngo.created_at ||
-                      ngo.createdAt
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                <div
+                  key={ngo.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1 text-sm font-semibold text-slate-700">
+                      <div className="text-base font-black text-slate-900">{ngo.name}</div>
+                      <div>City: {ngo.city || "-"}</div>
+                      <div>
+                        Updated:{" "}
+                        {formatDate(
+                          ngo.updated_at ||
+                          ngo.updatedAt ||
+                          ngo.updated ||
+                          ngo.created_at ||
+                          ngo.createdAt
+                        )}
+                      </div>
                       <button
-                        onClick={() => openEdit(ngo)}
-                        className="px-3 py-1 text-slate-900 rounded-full border border-slate-300 bg-white text-xs font-semibold hover:bg-slate-100"
+                        type="button"
+                        onClick={() => handleVerify(ngo)}
+                        disabled={verifyingId === ngo.id || deletingId === ngo.id || saving}
+                        className={
+                          ngo.verified
+                            ? "mt-1 inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            : "mt-1 inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        }
                       >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(ngo)}
-                        className="px-3 py-1 text-rose-700 rounded-full border border-rose-200 bg-rose-50 text-xs font-semibold hover:bg-rose-100"
-                      >
-                        Delete
+                        {ngo.verified ? <BadgeCheck size={13} /> : <ShieldCheck size={13} />}
+                        {verifyingId === ngo.id
+                          ? "Updating..."
+                          : ngo.verified
+                            ? "Verified"
+                            : "Unverified"}
                       </button>
                     </div>
-                  </td>
-                </tr>
+                    <div className="flex flex-wrap gap-2">
+                      <ActionButton
+                        label={editingId === ngo.id ? "OPENING..." : "PUT"}
+                        tone="update"
+                        icon={<Pencil size={14} />}
+                        onClick={
+                          verifyingId === ngo.id || deletingId === ngo.id || saving
+                            ? null
+                            : () => openEdit(ngo)
+                        }
+                      />
+                      <ActionButton
+                        label={deletingId === ngo.id ? "DELETING..." : "DELETE"}
+                        tone="delete"
+                        icon={<Trash2 size={14} />}
+                        onClick={
+                          verifyingId === ngo.id || deletingId === ngo.id || saving
+                            ? null
+                            : () => handleDelete(ngo)
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </AdminSection>
+      </main>
 
-      {/* For admin Modal */}
+      {/* Shared modal for both create and edit actions. */}
       <Modal open={open} title={editingNgo ? "Edit NGO" : "Add NGO"} onClose={() => setOpen(false)}>
         <NgoForm
           initial={editingNgo}
@@ -284,6 +419,7 @@ function Admin() {
           beneficiaries={beneficiaries}
           onCancel={() => setOpen(false)}
           onSubmit={handleSubmit}
+          isSubmitting={saving}
         />
       </Modal>
     </div>

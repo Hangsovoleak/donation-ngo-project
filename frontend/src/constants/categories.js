@@ -1,5 +1,6 @@
 import { GraduationCap, Cross, ChefHat, Shirt, Venus, UsersRound, TreeDeciduous, Cat } from "lucide-react";
 
+//export category icons for quick filtering
 export const CATEGORY_ICONS = [
     { label: "Education", icon: GraduationCap, color: "#2878c3" },
     { label: "Healthcare", icon: Cross, color: "#3b2da9" },

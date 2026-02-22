@@ -1,4 +1,6 @@
-// Page: 404 fallback when a route does not exist.
+// NotFound page:
+// Step 1: Show clear 404 message.
+// Step 2: Offer quick recovery actions (Home or Browse).
 import { Link } from "react-router-dom";
 
 function NotFound() {

@@ -1,10 +1,15 @@
 // Card: visual summary for one NGO in lists.
+// using it in NGOCard.jsx to display NGO information
 import { Link } from "react-router-dom";
 
+//display NGO information
 function Card({ ngo }) {
+  //get category names from categories prop
   const categories = (ngo.categories || []).join(", ") || "-";
+  //get beneficiary names from beneficiaries prop
   const beneficiaries = (ngo.beneficiaries || []).join(", ") || "-";
 
+  //get image url from ngo prop
   const imageUrl =
     ngo.image_url ||
     "https://bongsrey.sgp1.digitaloceanspaces.com/library/383/images/5d1ecb8986bbe.jpg";
