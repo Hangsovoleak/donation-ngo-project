@@ -1,5 +1,23 @@
-// Home page component: Hero section with search
-// using it in HomePage.jsx to display hero section
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      The primary hero section for the home page, containing a large 
+ *      call-to-action banner and a global search input.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Home page Hero section component.
+ * 
+ * @param search Current global search value.
+ * @param setSearch Setter for search value.
+ * @param onSearch Callback for primary search action.
+ * @param onBrowseAll Callback to navigate to browse all.
+ */
 function HeroSection({ search, setSearch, onSearch, onBrowseAll }) {
     return (
         <section className="relative overflow-hidden card">

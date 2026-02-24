@@ -1,20 +1,35 @@
-// Admin page flow:
-// Step 1: Ensure user is authenticated.
-// Step 2: Load metadata (categories/beneficiaries) and NGO list.
-// Step 3: Execute CRUD + verify actions.
-// Step 4: Keep UI responsive with optimistic updates and loading states.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Protected administrative dashboard for managing the NGO directory.
+ *      Supports full CRUD operations and verification toggling.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldCheck, Building2, Pencil, Plus, Trash2, LogOut, BadgeCheck,} from "lucide-react";
+import { ShieldCheck, Building2, Pencil, Plus, Trash2, LogOut, BadgeCheck } from "lucide-react";
+
+// UI Components
 import Modal from "../components/Modal";
 import NgoForm from "../components/Form";
 
-import { getNgos, getNgoById, createNgo, updateNgo, deleteNgo, toggleVerifyNgo, } from "../services/ngo.service";
-
+// Services & Hooks
+import { getNgos, getNgoById, createNgo, updateNgo, deleteNgo, toggleVerifyNgo } from "../services/ngo.service";
 import { getCategories, getBeneficiaries } from "../services/meta.service";
 import { clearTokens } from "../utils/authStorage";
 import { useRequireAdmin } from "../hooks/useRequireAdmin";
 
+/*------------------------------------------------------------------------------
+                               INTERNAL HELPERS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Reusable action button for the dashboard.
+ */
 function ActionButton({ label, tone = "neutral", icon, onClick }) {
   const toneClass = {
     create: "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
@@ -36,6 +51,9 @@ function ActionButton({ label, tone = "neutral", icon, onClick }) {
   );
 }
 
+/**
+ * @brief Layout section wrapper for the dashboard.
+ */
 function AdminSection({ title, icon, count, onCreate, children }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
@@ -65,13 +83,20 @@ function AdminSection({ title, icon, count, onCreate, children }) {
   );
 }
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Main Admin dashboard component.
+ */
 function Admin() {
-  // Core dataset displayed on dashboard.
+  // Primary datasets
   const [ngos, setNgos] = useState([]);
   const [categories, setCategories] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
 
-  // Request and action status flags.
+  // Operation status flags
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [verifyingId, setVerifyingId] = useState(null);
@@ -79,22 +104,26 @@ function Admin() {
   const [deletingId, setDeletingId] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Modal state for create/edit form.
+  // Form modal state for create/edit form
   const [open, setOpen] = useState(false);
   const [editingNgo, setEditingNgo] = useState(null);
 
   const navigate = useNavigate();
 
-  // Step 1: Redirect unauthenticated users to login.
+  // Enforce authentication at the hook level
   const isAuthed = useRequireAdmin();
 
-  // Centralized logout behavior used by 401 handlers.
+  /**
+   * @brief Handle user session termination.
+   */
   const handleLogout = useCallback(() => {
     clearTokens();
     navigate("/admin/login");
   }, [navigate]);
 
-  // Step 2A: Load reference data needed by the NGO form.
+  /**
+   * @brief Load category and beneficiary lookup data.
+   */
   const loadMeta = useCallback(async () => {
     setErr("");
     try {
@@ -110,13 +139,25 @@ function Admin() {
     }
   }, [handleLogout]);
 
-  // Step 2B: Load NGOs shown in the dashboard list.
+  /**
+   * @brief Load the primary NGO list.
+   */
   const loadList = useCallback(async ({ silent = false } = {}) => {
+    // ARTIFICIAL DELAY: Wait 2.5 seconds to show "Loading..." state (for student demo)
+    if (!silent) await new Promise((r) => setTimeout(r, 2500));
+
     if (!silent) setLoading(true);
     setErr("");
     try {
-      const list = await getNgos();
-      setNgos(asData(list));
+      // Request a high limit to show all NGOs in one list
+      const resp = await getNgos({ limit: 1000 });
+      const payload = resp?.data || resp;
+
+      if (payload?.data && Array.isArray(payload.data)) {
+        setNgos(payload.data);
+      } else {
+        setNgos(Array.isArray(payload) ? payload : []);
+      }
     } catch (e) {
       if (e?.response?.status === 401) {
         handleLogout();
@@ -128,26 +169,33 @@ function Admin() {
     }
   }, [handleLogout]);
 
-  // Initial admin page load once auth is confirmed.
+  // Initial stabilization sync
   useEffect(() => {
     if (!isAuthed) return;
     loadMeta();
     loadList();
   }, [isAuthed, loadList, loadMeta]);
 
-  // Step 3A: Open form in create mode.
+  /**
+   * @brief Initialize form for a new NGO entry.
+   */
   function openAdd() {
     setEditingNgo(null);
     setOpen(true);
   }
 
-  // Step 3B: Open form in edit mode with full NGO payload.
+  /**
+   * @brief Initialize form for an existing NGO with detailed data.
+   */
   async function openEdit(ngo) {
+    console.log("Admin: openEdit called for NGO:", ngo.id, ngo.name);
     setErr("");
     setEditingId(ngo.id);
     try {
       const full = await getNgoById(ngo.id);
-      setEditingNgo(asData(full));
+      const normalized = asData(full);
+      console.log("Admin: Received normalized data:", normalized);
+      setEditingNgo(normalized);
       setOpen(true);
     } catch (e) {
       if (e?.response?.status === 401) {
@@ -160,7 +208,9 @@ function Admin() {
     }
   }
 
-  // Step 3C: Optimistic delete with rollback on API failure.
+  /**
+   * @brief Perform optimistic deletion of an NGO.
+   */
   async function handleDelete(ngo) {
     const ok = window.confirm(`Delete: ${ngo.name} ?`);
     if (!ok) return;
@@ -183,7 +233,9 @@ function Admin() {
     }
   }
 
-  // Step 3D: Optimistic verify/unverify toggle.
+  /**
+   * @brief Toggle verification status with immediate UI feedback.
+   */
   async function handleVerify(ngo) {
     const previousValue = Boolean(ngo.verified);
     setVerifyingId(ngo.id);
@@ -228,7 +280,9 @@ function Admin() {
     }
   }
 
-  // Step 3E: Submit create or update, then sync dashboard state.
+  /**
+   * @brief Submit the NGO form (Create or Update).
+   */
   async function handleSubmit(payload) {
     setSaving(true);
     try {
@@ -264,7 +318,7 @@ function Admin() {
     }
   }
 
-  // Helpers.
+  // Date formatting helper
   function formatDate(value) {
     if (!value) return "Never";
     const date = new Date(value);
@@ -272,10 +326,26 @@ function Admin() {
     return date.toISOString().slice(0, 10);
   }
 
+  // Response normalizer for paginated or direct responses
   function asData(response) {
-    return response?.data || response || [];
+    // Axios wraps response in .data. 
+    // Our API for list data uses { data: [], meta: {} }
+    // Our API for single data uses { ...ngoFields }
+    const body = response?.data || response;
+
+    // If it's the wrapped list format
+    if (body?.data && Array.isArray(body.data)) return body.data;
+
+    // If it's already an array
+    if (Array.isArray(body)) return body;
+
+    // If it's a single object (like a single NGO record for editing)
+    if (body && typeof body === "object") return body;
+
+    return body || null;
   }
 
+  // Stats calculations
   const verifiedCount = useMemo(
     () => ngos.filter((ngo) => Boolean(ngo.verified)).length,
     [ngos]
@@ -411,7 +481,6 @@ function Admin() {
         </AdminSection>
       </main>
 
-      {/* Shared modal for both create and edit actions. */}
       <Modal open={open} title={editingNgo ? "Edit NGO" : "Add NGO"} onClose={() => setOpen(false)}>
         <NgoForm
           initial={editingNgo}

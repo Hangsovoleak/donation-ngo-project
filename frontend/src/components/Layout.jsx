@@ -1,8 +1,27 @@
-// Layout: shared header/nav/footer wrapper for all pages.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Shared layout wrapper component providing the main header, 
+ *      navigation, and footer context for all pages.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import Footer from "./Footer";
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Main Layout wrapper.
+ * 
+ * @param children Page content to be rendered within the layout.
+ */
 function Layout({ children }) {
   const location = useLocation();
   const isAdminDashboard = location.pathname === "/admin";
@@ -46,6 +65,7 @@ function Layout({ children }) {
       <main className={isAdminDashboard ? "" : "max-w-screen-xl mx-auto px-4 py-10"}>
         {children}
       </main>
+
       {!isAdminDashboard ? <Footer /> : null}
     </div>
   );

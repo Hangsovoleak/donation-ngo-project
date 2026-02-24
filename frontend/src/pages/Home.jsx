@@ -1,14 +1,21 @@
-// Home page flow:
-// Step 1: Load categories and featured NGOs from API.
-// Step 2: Build category chips used by quick filters.
-// Step 3: Navigate to /browse with selected query params.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Landing page component that displays featured NGOs, hero banner, 
+ *      and quick category filters.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNgos } from "../services/ngo.service";
 import { getCategories } from "../services/meta.service";
 import { CATEGORY_ICONS } from "../constants/categories";
 
-// Import Home page components
+// Page-specific section components
 import HeroSection from "../components/home/HeroSection";
 import QuickFilters from "../components/home/QuickFilters";
 import HowItWorks from "../components/home/HowItWorks";
@@ -16,36 +23,50 @@ import ImpactStats from "../components/home/ImpactStats";
 import FeaturedNGOs from "../components/home/FeaturedNGOs";
 import VerificationInfo from "../components/home/VerificationInfo";
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Home page component.
+ */
 function Home() {
   const navigate = useNavigate();
 
-  // UI state for search and fetched home data.
+  // UI state for search and fetched data
   const [search, setSearch] = useState("");
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
   const [err, setErr] = useState("");
   const [featuredLoading, setFeaturedLoading] = useState(true);
 
-  // Step 1A: Load categories used in quick filter buttons.
+  /**
+   * @brief Load categories for quick filters.
+   */
   useEffect(() => {
     (async () => {
       try {
         const cats = await getCategories();
-        setCategories(cats.data || cats || []);
+        const payload = cats?.data;
+        setCategories(Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []));
       } catch (e) {
-        // silent: Home still works without categories
+        // Fail silently: categories are optional for the UI
       }
     })();
   }, []);
 
-  // Step 1B: Load verified NGOs for the featured section.
+  /**
+   * @brief Load top featured NGOs.
+   */
   useEffect(() => {
     (async () => {
       setFeaturedLoading(true);
       try {
         const list = await getNgos({ verified: "true" });
-        const data = list.data || list || [];
-        setFeatured(data.slice(0, 6));
+        // Correctly extract array from { data: [...], meta: {} }
+        const payload = list?.data;
+        const array = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []);
+        setFeatured(array.slice(0, 6));
       } catch (e) {
         setErr(e.message || "Failed to load NGOs");
       } finally {
@@ -54,13 +75,17 @@ function Home() {
     })();
   }, []);
 
-  // Step 2: Merge API categories with fallback icons and remove duplicates.
+  // Derived category list merging API data with fallbacks
   const catList = useMemo(() => {
     const fromApi = Array.isArray(categories) ? categories.map((c) => c.name || c) : [];
     return Array.from(new Set([...CATEGORY_ICONS.map((q) => q.label), ...fromApi].filter(Boolean)));
   }, [categories]);
 
-  // Step 3: Route to browse page and preserve selected filters in URL.
+  /**
+   * @brief Redirect to browse page with parameters.
+   * 
+   * @param params Query parameters for the browse page.
+   */
   function goBrowse(params = {}) {
     const qs = new URLSearchParams(params);
     navigate(`/browse?${qs.toString()}`);
@@ -76,7 +101,6 @@ function Home() {
       />
 
       <QuickFilters
-        //use props for pass data to component
         categories={catList}
         categoryIcons={CATEGORY_ICONS}
         onFilterClick={goBrowse}
@@ -86,8 +110,11 @@ function Home() {
 
       <ImpactStats />
 
-      {/* Featured NGOs */}
-      <FeaturedNGOs ngos={featured} error={err} loading={featuredLoading} />
+      <FeaturedNGOs
+        ngos={featured}
+        error={err}
+        loading={featuredLoading}
+      />
 
       <VerificationInfo />
     </div>

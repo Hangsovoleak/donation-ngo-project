@@ -1,39 +1,54 @@
-//Middleware for CORS, JSON parsing
+/**
+ * Software Framework: Express.js (Node.js)
+ * Description:
+ *      Core application configuration. Sets up global middleware, 
+ *      registers API routes, and defines centralized error handling.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import express from 'express';
 import cors from 'cors';
 
-//Routes : all API endpoints
+// Route Modules
 import ngoRoutes from './routes/ngo.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import beneficiariesRoutes from './routes/beneficiary.routes.js';
 import locationRoutes from './routes/location.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 
-//Error handling (404 + error handler)
+// Middleware Modules
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 
-//app where can configue the Express app like: middleware, routes, err handling
+/*------------------------------------------------------------------------------
+                            APPLICATION SETUP
+------------------------------------------------------------------------------*/
 const app = express();
 
-//Enales cross-origin requests. without this, React often gets blocked | for connecting backend to React frontend
+// Global Middleware
 app.use(cors());
-//Express read JSON body from request
 app.use(express.json());
 
-//test endpoint to confirm server is running
+// Health Check Endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ok: true});
+    res.json({ ok: true });
 });
 
-//routes
+/*------------------------------------------------------------------------------
+                                   ROUTES
+------------------------------------------------------------------------------*/
 app.use('/api/ngos', ngoRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/beneficiaries', beneficiariesRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/admin', adminRoutes);
 
-//errors
+/*------------------------------------------------------------------------------
+                                ERROR HANDLING
+------------------------------------------------------------------------------*/
 app.use(notFound);
 app.use(errorHandler);
 

@@ -1,14 +1,38 @@
-// Meta API service flow:
-// Step 1: UI calls these helpers for reference data.
-// Step 2: Each helper maps to one backend metadata endpoint.
-// Step 3: Shared auth/retry behavior comes from `http.js`.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Service layer for fetching metadata and reference data 
+ *      (categories, beneficiaries, locations).
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import api from "./http";
 
-// GET /api/categories
+/*------------------------------------------------------------------------------
+                                META SERVICES
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Fetch all NGO categories.
+ * 
+ * @return Axios Promise with category list.
+ */
 export const getCategories = () => api.get("/categories");
 
-// GET /api/beneficiaries
+/**
+ * @brief Fetch all supported beneficiary groups.
+ * 
+ * @return Axios Promise with beneficiaries list.
+ */
 export const getBeneficiaries = () => api.get("/beneficiaries");
 
-// GET /api/locations?ngoId=...
+/**
+ * @brief Fetch project locations.
+ * 
+ * @param params Filtering parameters (e.g. ngoId).
+ * @return Axios Promise with location list.
+ */
 export const getLocations = (params) => api.get("/locations", { params });

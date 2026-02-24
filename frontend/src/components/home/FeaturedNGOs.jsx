@@ -1,9 +1,29 @@
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      A section component for the home page that displays a carousel 
+ *      or grid of featured verified NGOs.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Link } from "react-router-dom";
 import NgoCard from "../Card";
 import SkeletonCard from "../common/SkeletonCard";
 
-// Home page component: Featured NGOs section
-// using it in HomePage.jsx to display featured NGOs
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Featured NGOs section component.
+ * 
+ * @param ngos Array of featured NGO records.
+ * @param error Error state if fetching failed.
+ * @param loading Boolean loading indicator.
+ */
 function FeaturedNGOs({ ngos, error, loading }) {
     return (
         <section className="grid gap-6 lg:grid-cols-4">
@@ -27,7 +47,7 @@ function FeaturedNGOs({ ngos, error, loading }) {
 
                 {error && <div className="mt-3 text-sm text-red-500">{error}</div>}
 
-                <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {loading
                         ? [...Array(6)].map((_, i) => (
                             <SkeletonCard key={`featured-skeleton-${i}`} keyId={`featured-skeleton-${i}`} />

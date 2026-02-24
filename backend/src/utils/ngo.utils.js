@@ -1,7 +1,23 @@
-// Utilities for NGO payload shaping and link building.
+/**
+ * Software Framework: Node.js
+ * Description:
+ *      Utilities for NGO data transformation, payload parsing, and relational
+ *      link building for Prisma operations.
+ * 
+ */
 
+/*------------------------------------------------------------------------------
+                               UTILITY FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Get NGO selection object.
+ * 
+ * Defines the fields and relations to include in NGO database queries.
+ * 
+ * @returns Prisma select object.
+ */
 export function ngoSelectWithRelations() {
-  //select fields for NGO entities and relations
   return {
     id: true,
     name: true,
@@ -18,8 +34,15 @@ export function ngoSelectWithRelations() {
   };
 }
 
+/**
+ * @brief Format NGO details.
+ * 
+ * Normalizes a raw NGO database record into an API-friendly response format.
+ * 
+ * @param ngo Raw NGO record from Prisma.
+ * @returns Formatted NGO object.
+ */
 export function formatNgoDetail(ngo) {
-  //map NGO locations to return object
   const mapLinks = ngo.ngo_locations.map((loc) => loc.link);
 
   return {
@@ -40,8 +63,16 @@ export function formatNgoDetail(ngo) {
   };
 }
 
+/**
+ * @brief Parse NGO creation payload.
+ * 
+ * Validates and transforms the request body into a data object suitable for 
+ * Prisma create operations.
+ * 
+ * @param body Request body object.
+ * @returns Object containing status and prepared data.
+ */
 export function parseNgoCreate(body) {
-  //parse NGO create payload and return object
   const {
     name,
     description,
@@ -54,7 +85,6 @@ export function parseNgoCreate(body) {
     locations = [],
   } = body || {};
 
-  //validate NGO create payload
   if (!name || typeof name !== "string") {
     return { ok: false, error: "name is required" };
   }
@@ -75,8 +105,16 @@ export function parseNgoCreate(body) {
   };
 }
 
+/**
+ * @brief Build NGO update payload.
+ * 
+ * Transforms partial update data from the request body into a Prisma update 
+ * command object, including relational link handling.
+ * 
+ * @param body Request body object.
+ * @returns Prisma update data object.
+ */
 export function buildNgoUpdate(body) {
-  //build NGO update payload and return object using for NGO update
   const {
     name,
     description,
@@ -89,7 +127,6 @@ export function buildNgoUpdate(body) {
     locations,
   } = body || {};
 
-  //build NGO update payload and return object using for NGO update
   return {
     ...(name !== undefined && { name }),
     ...(description !== undefined && { description }),
@@ -118,21 +155,31 @@ export function buildNgoUpdate(body) {
   };
 }
 
-//build NGO category links and return object using for NGO create
+/*------------------------------------------------------------------------------
+                                INTERNAL HELPERS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Build category links.
+ */
 function buildCategoryLinks(ids) {
   return Array.isArray(ids) && ids.length
     ? { create: ids.map((id) => ({ category_id: Number(id) })) }
     : undefined;
 }
 
-//build NGO beneficiary links and return object using for NGO update
+/**
+ * @brief Build beneficiary links.
+ */
 function buildBeneficiaryLinks(ids) {
   return Array.isArray(ids) && ids.length
     ? { create: ids.map((id) => ({ beneficiary_id: Number(id) })) }
     : undefined;
 }
 
-//build NGO location links and return object using for NGO update
+/**
+ * @brief Build location links.
+ */
 function buildLocationLinks(locations) {
   return Array.isArray(locations) && locations.length
     ? { create: locations.map((loc) => ({ link: String(loc.link ?? loc) })) }

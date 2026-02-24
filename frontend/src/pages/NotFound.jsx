@@ -1,8 +1,23 @@
-// NotFound page:
-// Step 1: Show clear 404 message.
-// Step 2: Offer quick recovery actions (Home or Browse).
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Fallback page for unresolved routes (404 Error), providing 
+ *      clear feedback and navigation recovery options.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Link } from "react-router-dom";
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Not Found (404) page component.
+ */
 function NotFound() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">

@@ -1,7 +1,26 @@
+/**
+ * Software Framework: Prisma ORM (Node.js)
+ * Description:
+ *      Service for database operations related to NGO categories.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import prisma from "../db/prisma.js";
 
-// Database access for categories.
+/*------------------------------------------------------------------------------
+                            SERVICE FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief List categories.
+ * 
+ * Fetches all categories from the database, ordered by ID.
+ * 
+ * @returns Array of category records.
+ */
 export function listCategories() {
-  //list content by asc: Ascending and depend it on prisma generate table
   return prisma.categories.findMany({ orderBy: { id: "asc" } });
 }

@@ -1,16 +1,33 @@
-// NGO service flow:
-// Step 1: Receive validated inputs from controllers.
-// Step 2: Execute Prisma queries against `ngos` and relation tables.
-// Step 3: Normalize DB records into API-friendly response objects.
+/**
+ * Software Framework: Prisma ORM (Node.js)
+ * Description:
+ *      Service for comprehensive NGO database operations including 
+ *      filtering, listing, and lifecycle management.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import prisma from "../db/prisma.js";
 import { ngoSelectWithRelations } from "../utils/ngo.utils.js";
 
-// List NGOs with filter/sort/pagination options from controller layer.
+/*------------------------------------------------------------------------------
+                            SERVICE FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief List and filter NGOs.
+ * 
+ * Queries NGOs with relations, applying filters, sorting, and pagination.
+ * 
+ * @param params Filtering, sorting, and pagination parameters.
+ * @returns Normalized array of NGO records.
+ */
 export async function listNgos({ where, includeDetails, sortBy, sortOrder, skip, take }) {
-  // Step 2: Query NGO rows plus relation names needed by UI cards.
+  // Query NGO data with relations
   const ngos = await prisma.ngos.findMany({
     where,
-    // Safe sort field/order already validated by controller.
     orderBy: { [sortBy]: sortOrder },
     ...(take ? { take } : {}),
     ...(skip !== undefined ? { skip } : {}),
@@ -30,7 +47,7 @@ export async function listNgos({ where, includeDetails, sortBy, sortOrder, skip,
     },
   });
 
-  // Step 3: Flatten relation arrays into simple string arrays.
+  // Normalize and flatten relation arrays
   return ngos.map((n) => ({
     id: n.id,
     name: n.name,
@@ -47,12 +64,24 @@ export async function listNgos({ where, includeDetails, sortBy, sortOrder, skip,
   }));
 }
 
-// Count rows for pagination metadata.
+/**
+ * @brief Count NGOs.
+ * 
+ * Returns the total count of NGOs matching a filter.
+ * 
+ * @param where Prisma where filter object.
+ * @returns Total count.
+ */
 export async function countNgos(where) {
   return prisma.ngos.count({ where });
 }
 
-// Fetch one NGO detail payload by id.
+/**
+ * @brief Get NGO by ID.
+ * 
+ * @param id NGO ID.
+ * @returns Unique NGO record with full relations.
+ */
 export async function getNgoById(id) {
   return prisma.ngos.findUnique({
     where: { id },
@@ -60,7 +89,12 @@ export async function getNgoById(id) {
   });
 }
 
-// Create NGO and return full relation-aware payload.
+/**
+ * @brief Create NGO.
+ * 
+ * @param data NGO creation data.
+ * @returns Created NGO record.
+ */
 export async function createNgo(data) {
   return prisma.ngos.create({
     data,
@@ -68,7 +102,13 @@ export async function createNgo(data) {
   });
 }
 
-// Update NGO by id and return updated payload.
+/**
+ * @brief Update NGO.
+ * 
+ * @param id NGO ID.
+ * @param data Update payload.
+ * @returns Updated NGO record.
+ */
 export async function updateNgo(id, data) {
   return prisma.ngos.update({
     where: { id },
@@ -77,14 +117,24 @@ export async function updateNgo(id, data) {
   });
 }
 
-// Delete NGO by id.
+/**
+ * @brief Delete NGO.
+ * 
+ * @param id NGO ID.
+ */
 export async function deleteNgo(id) {
   return prisma.ngos.delete({ where: { id } });
 }
 
-// Verify/unverify NGO.
-// If `verified` is provided, set that explicit value.
-// If omitted, toggle existing value.
+/**
+ * @brief Toggle NGO Verification.
+ * 
+ * Sets an explicit verification value or toggles the current state.
+ * 
+ * @param id NGO ID.
+ * @param verified Optional boolean verification value.
+ * @returns Minimal NGO record with updated status.
+ */
 export async function toggleNgoVerification(id, verified) {
   if (typeof verified === "boolean") {
     return prisma.ngos.update({
@@ -94,20 +144,19 @@ export async function toggleNgoVerification(id, verified) {
     });
   }
 
-  // Read current state for toggle mode.
+  // Read current state for toggle mode
   const current = await prisma.ngos.findUnique({
     where: { id },
     select: { verified: true },
   });
 
-  // Return 404-like error for missing NGO.
   if (!current) {
     const err = new Error("NGO not found");
     err.statusCode = 404;
     throw err;
   }
 
-  // Toggle and return minimal payload used by admin UI.
+  // Toggle state
   return prisma.ngos.update({
     where: { id },
     data: { verified: !Boolean(current.verified) },

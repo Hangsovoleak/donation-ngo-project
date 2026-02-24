@@ -1,26 +1,41 @@
-// Browse page flow:
-// Step 1: Read initial filters from URL query params.
-// Step 2: Fetch categories + NGO list from API.
-// Step 3: Keep URL in sync when user changes filters.
-// Step 4: Render filters, results, and pagination controls.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      The primary discovery page where users can search, filter, and 
+ *      browse the directory of NGOs.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getNgos } from "../services/ngo.service";
 import { getCategories } from "../services/meta.service";
 
-// Import Browse page components
+// Browse specific components
 import BrowseHeader from "../components/browse/BrowseHeader";
 import FilterPanel from "../components/browse/FilterPanel";
 import NGOGrid from "../components/browse/NGOGrid";
 import Pagination from "../components/browse/Pagination";
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Browse directory page component.
+ */
 function Browse() {
-  // Step 1: URLSearchParams is the source of truth for shareable filter links.
+  // Current URL search parameters (source of truth)
   const [params, setParams] = useSearchParams();
 
+  // Data state
   const [ngos, setNgos] = useState([]);
   const [categories, setCategories] = useState([]);
 
+  // Filter state initialized from URL
   const [search, setSearch] = useState(params.get("search") || "");
   const [city, setCity] = useState(params.get("city") || "");
   const [category, setCategory] = useState(params.get("category") || "");
@@ -30,24 +45,29 @@ function Browse() {
   const [sortBy, setSortBy] = useState(params.get("sortBy") || "updated_at");
   const [sortOrder, setSortOrder] = useState(params.get("sortOrder") || "desc");
 
-  // Request state and API pagination metadata.
+  // Request & UI state
   const [loading, setLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [err, setErr] = useState("");
   const [meta, setMeta] = useState(null);
   const skipFirstFilterEffect = useRef(true);
 
-  // Step 2A: Load categories once to populate dropdown/filter options.
   async function loadCategories() {
     try {
-      const cats = await getCategories();
-      setCategories(cats.data || cats || []);
+      const resp = await getCategories();
+      const payload = resp?.data;
+      setCategories(Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []));
     } catch (e) {
-      // keep browsing working even if categories fail
+      // Non-blocking failure
     }
   }
 
-  // Step 2B: Load NGO list with current filters and sort/pagination state.
+
+  /**
+   * @brief Fetch NGO list based on current filters.
+   * 
+   * @param options Execution flags (e.g., silent for background updates).
+   */
   async function loadNgos({ silent = false } = {}) {
     if (!silent) {
       setLoading(true);
@@ -67,7 +87,8 @@ function Browse() {
         sortOrder,
       });
       const payload = list?.data || list || [];
-      // Supports both response shapes: { data, meta } and plain arrays.
+
+      // Normalize API response shapes
       if (payload?.data && Array.isArray(payload.data)) {
         setNgos(payload.data);
         setMeta(payload.meta || null);
@@ -85,14 +106,14 @@ function Browse() {
     }
   }
 
-  // Initial page load.
+  // Initial load
   useEffect(() => {
     loadCategories();
     loadNgos();
     // eslint-disable-next-line
   }, []);
 
-  // Step 3: Push current filter state to query string for deep-linking.
+  // Sync state back to URL query parameters
   useEffect(() => {
     const next = {};
     if (search) next.search = search;
@@ -107,7 +128,7 @@ function Browse() {
     // eslint-disable-next-line
   }, [search, city, category, verifiedOnly, page, limit, sortBy, sortOrder]);
 
-  // Debounced refetch when filters change to avoid noisy API calls.
+  // Automatic re-fetch when filters change (debounced)
   useEffect(() => {
     if (skipFirstFilterEffect.current) {
       skipFirstFilterEffect.current = false;
@@ -118,7 +139,7 @@ function Browse() {
     // eslint-disable-next-line
   }, [search, city, category, verifiedOnly, page, limit, sortBy, sortOrder]);
 
-  // Merge fallback labels with API labels and remove duplicates.
+  // Derived category list merging API data and fallbacks
   const availableCategories = useMemo(() => {
     const fallback = ["Education", "Healthcare", "Food", "Clothing"];
     const fromApi = Array.isArray(categories) && categories.length
@@ -127,7 +148,9 @@ function Browse() {
     return Array.from(new Set([...fallback, ...fromApi].filter(Boolean)));
   }, [categories]);
 
-  // Reset all filters back to defaults.
+  /**
+   * @brief Reset all active filters.
+   */
   function clearFilters() {
     setSearch("");
     setCity("");
@@ -136,28 +159,33 @@ function Browse() {
     setPage(1);
   }
 
-  // Return to page 1 when a filter/sort change requires fresh pagination.
+  /**
+   * @brief Revert to first page of results.
+   */
   function resetPage() {
     if (page !== 1) setPage(1);
   }
 
-  // Pagination helpers.
+  /**
+   * @brief Navigate to previous result page.
+   */
   function goPrev() {
     if (page > 1) setPage((p) => Math.max(1, p - 1));
   }
 
+  /**
+   * @brief Navigate to next result page.
+   */
   function goNext() {
     const totalPages = meta?.totalPages;
     if (totalPages && page >= totalPages) return;
     setPage((p) => p + 1);
   }
 
-
   return (
     <div className="space-y-6">
       <BrowseHeader />
 
-      {/* Filter Panel */}
       <FilterPanel
         search={search}
         setSearch={setSearch}
@@ -180,7 +208,6 @@ function Browse() {
         showClearButton={search || city || category || verifiedOnly}
       />
 
-      {/* NGO Grid */}
       <NGOGrid
         ngos={ngos}
         loading={loading}
@@ -189,7 +216,6 @@ function Browse() {
         onClearFilters={clearFilters}
       />
 
-      {/* Pagination */}
       <Pagination
         currentPage={page}
         totalPages={meta?.totalPages}

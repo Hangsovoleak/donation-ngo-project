@@ -1,19 +1,26 @@
+/**
+ * Software Framework: Express.js (Node.js)
+ * Description:
+ *      Routes for administrative authentication and session management.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Router } from "express";
 import {
   loginAdminController,
   logoutAdminController,
-  refreshAdminController,
 } from "../controllers/admin.controller.js";
 
+/*------------------------------------------------------------------------------
+                                   ROUTES
+------------------------------------------------------------------------------*/
 const router = Router();
 
-// POST /api/admin/login
+// Admin Authentication Endpoints
 router.post("/login", loginAdminController);
-
-// POST /api/admin/refresh
-router.post("/refresh", refreshAdminController);
-
-// POST /api/admin/logout
 router.post("/logout", logoutAdminController);
 
 export default router;

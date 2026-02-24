@@ -1,33 +1,53 @@
-// Auth middleware flow:
-// Step 1: Read bearer token from Authorization header.
-// Step 2: Validate required JWT secret config.
-// Step 3: Verify token and attach payload to `req.user`.
-// Step 4: Continue request or return 401/500 on failure.
+/**
+ * Software Framework: Express.js (Node.js)
+ * Description:
+ *      Authentication middleware for protecting routes using JWT Bearer tokens.
+ *      Verifies token validity and attaches user payload to the request object.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import jwt from "jsonwebtoken";
 
-// Protects admin-only routes.
-export function requireAuth(req, res, next) {
-  // Step 1: Parse `Authorization: Bearer <token>`.
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+/*------------------------------------------------------------------------------
+                                MIDDLEWARE
+------------------------------------------------------------------------------*/
 
-  if (!token) {
-    return res.status(401).json({ message: "Missing token" });
+/**
+ * @brief Require Authentication middleware.
+ * 
+ * Validates the JWT token from the Authorization header.
+ * 
+ * @param req Express request object.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
+export function requireAuth(req, res, next) {
+  // Get Bearer token from Authorization header
+  const authHeader = req.headers.authorization || "";
+  let token = "";
+  if (authHeader.startsWith("Bearer ")) {
+    token = authHeader.slice(7);
   }
 
-  // Step 2: JWT secret must exist in environment.
+  if (!token) {
+    return res.status(401).json({ message: "Missing token. Please login again." });
+  }
+
+  // Ensure JWT secret is configured
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     return res.status(500).json({ message: "JWT secret not configured" });
   }
 
   try {
-    // Step 3: Verify token signature/expiry and expose claims to next handlers.
+    // Verify token and attach payload to request
     const payload = jwt.verify(token, secret);
     req.user = payload;
     return next();
   } catch (err) {
-    // Step 4: Invalid or expired token.
     return res.status(401).json({ message: "Invalid token" });
   }
 }

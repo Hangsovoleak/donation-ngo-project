@@ -1,6 +1,35 @@
-// Browse page component: Comprehensive filter panel
-// using it in Browse.jsx to filter NGOs
-//create filterpanel component to filter NGOs
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Comprehensive filtration and sorting panel for the NGO browse page.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Filter and search panel component.
+ * 
+ * @param search Search query string.
+ * @param setSearch Setter for search query.
+ * @param category Selected category name.
+ * @param setCategory Setter for category.
+ * @param city Selected city name.
+ * @param setCity Setter for city.
+ * @param verifiedOnly Boolean toggle for verified status.
+ * @param setVerifiedOnly Setter for verified flag.
+ * @param sortBy Field name to sort by.
+ * @param setSortBy Setter for sort field.
+ * @param sortOrder Order (asc/desc).
+ * @param setSortOrder Setter for sort order.
+ * @param availableCategories List of category names.
+ * @param totalNgos Cumulative count of NGOs found.
+ * @param onClearFilters Callback to reset all filters.
+ * @param onResetPage Callback to reset pagination to page 1.
+ * @param showClearButton Boolean flag to show/hide clear button.
+ */
 function FilterPanel({
     search, setSearch,
     category, setCategory,

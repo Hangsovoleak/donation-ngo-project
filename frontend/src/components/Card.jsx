@@ -1,15 +1,31 @@
-// Card: visual summary for one NGO in lists.
-// using it in NGOCard.jsx to display NGO information
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      A card component to display a visual summary of an NGO, 
+ *      including its name, description, categories, and beneficiaries.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Link } from "react-router-dom";
 
-//display NGO information
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief NGO Card component.
+ * 
+ * @param ngo NGO data object containing names, descriptions, and relations.
+ */
 function Card({ ngo }) {
-  //get category names from categories prop
+  // Extract category and beneficiary names for display
   const categories = (ngo.categories || []).join(", ") || "-";
-  //get beneficiary names from beneficiaries prop
   const beneficiaries = (ngo.beneficiaries || []).join(", ") || "-";
 
-  //get image url from ngo prop
+  // Fallback image if none provided
   const imageUrl =
     ngo.image_url ||
     "https://bongsrey.sgp1.digitaloceanspaces.com/library/383/images/5d1ecb8986bbe.jpg";

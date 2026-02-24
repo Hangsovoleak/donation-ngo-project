@@ -1,11 +1,30 @@
-// Browse page component: Pagination controls
-// using it in Browse.jsx to display pagination
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Pagination control component with Next/Back buttons and page indicators.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Pagination controls component.
+ * 
+ * @param currentPage Current active page number.
+ * @param totalPages Cumulative count of available pages.
+ * @param onPrev Callback for previous page.
+ * @param onNext Callback for next page.
+ * @param loading Boolean loading state.
+ * @param isFetching Boolean refresh state.
+ */
 function Pagination({ currentPage, totalPages, onPrev, onNext, loading, isFetching }) {
-    //check if totalPages is less than 1 or loading is true
+    // Reserve space even if hidden to prevent footer/bottom layout shifts
     if (!totalPages || totalPages <= 1 || loading) {
-        return null;
+        return <div className="h-[42px] w-full" aria-hidden="true" />;
     }
-    //display pagination controls
+
     return (
         <div className="flex items-center justify-center gap-3">
             <button

@@ -1,28 +1,30 @@
-// Central place for reading/writing auth tokens.
-// Helps keep token logic consistent across the app.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      V2 Utility for in-memory authentication token storage.
+ *      Replaces LocalStorage for enhanced security.
+ * 
+ */
 
-//get item by access token and refresh token 
+let inMemoryToken = null;
+
+/**
+ * @brief Retrieve admin access token from memory.
+ */
 export function getAccessToken() {
-  return localStorage.getItem("AdminToken");
+  return inMemoryToken;
 }
 
-//set item by access token and refresh token 
+/**
+ * @brief Set admin access token in memory.
+ */
 export function setAccessToken(token) {
-  localStorage.setItem("AdminToken", token);
+  inMemoryToken = token;
 }
 
-//get item by refresh token and access token 
-export function getRefreshToken() {
-  return localStorage.getItem("AdminRefreshToken");
-}
-
-//set item by refresh token and access token 
-export function setRefreshToken(token) {
-  localStorage.setItem("AdminRefreshToken", token);
-}
-
-//clear item by access token and refresh token and remove from local storage
+/**
+ * @brief Clear all authentication data from memory.
+ */
 export function clearTokens() {
-  localStorage.removeItem("AdminToken");
-  localStorage.removeItem("AdminRefreshToken");
+  inMemoryToken = null;
 }

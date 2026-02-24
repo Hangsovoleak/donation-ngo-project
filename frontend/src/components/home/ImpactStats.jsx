@@ -1,10 +1,26 @@
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Animated statistics section displaying cumulative impact metrics 
+ *      like the number of verified NGOs and lives impacted.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Building2, Users, TrendingUp } from "lucide-react";
 
-// Home page component: Impact statistics cards
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Impact Statistics summary component.
+ */
 function ImpactStats() {
     return (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            
             <div className="card p-6 text-center hover:scale-105 transition-transform">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 mb-4">
                     <Building2 className="text-blue-600" size={32} />

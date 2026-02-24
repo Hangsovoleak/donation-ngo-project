@@ -9,19 +9,67 @@ The backend exposes REST APIs for NGO discovery and admin operations, backed by 
 - PostgreSQL
 - JWT (`jsonwebtoken`) for admin auth
 
+## Data Model
+```mermaid
+erDiagram
+    NGOS ||--o{ NGO_CATEGORIES : has
+    CATEGORIES ||--o{ NGO_CATEGORIES : categorized_by
+    NGOS ||--o{ NGO_BENEFICIARIES : supports
+    BENEFICIARIES ||--o{ NGO_BENEFICIARIES : benefit_from
+    NGOS ||--o{ NGO_LOCATIONS : located_at
+
+    NGOS {
+        int id PK
+        string name
+        string description
+        string city
+        boolean verified
+    }
+    CATEGORIES {
+        int id PK
+        string name
+    }
+    BENEFICIARIES {
+        int id PK
+        string name
+    }
+```
+
 ## Directory Guide
 ```text
 src/
-  server.js               # Process entrypoint
-  app.js                  # Express app wiring
-  routes/                 # API route definitions
-  controllers/            # Request/response logic
-  services/               # Prisma/data operations
-  middleware/             # Auth + error middleware
-  utils/                  # Parsers/token helpers
-  db/prisma.js            # Prisma client
+├── server.js               # Entry point: Starts the HTTP server and handles shutdowns
+├── app.js                  # Express setup: Configures middleware, routes, and global handlers
+├── controllers/            # Request handlers: Logic for parsing params and sending responses
+│   ├── admin.controller.js      # Admin authentication and refresh logic
+│   ├── ngo.controller.js        # NGO CRUD operations and verification logic
+│   ├── category.controller.js   # Category fetching
+│   ├── beneficiary.controller.js # Beneficiary fetching
+│   └── location.controller.js    # Location fetching (specific to NGOs)
+├── routes/                 # API endpoint definitions
+│   ├── admin.routes.js          # /api/admin paths (login, refresh, logout)
+│   ├── ngo.routes.js            # /api/ngos paths (public + protected)
+│   ├── category.routes.js       # /api/categories paths
+│   ├── beneficiary.routes.js    # /api/beneficiaries paths
+│   └── location.routes.js       # /api/locations paths
+├── services/               # Business logic: Direct interaction with Prisma client
+│   ├── admin.service.js         # Admin credential verification
+│   ├── ngo.service.js           # NGO filtering, sorting, and database updates
+│   ├── category.service.js      # Category data retrieval
+│   ├── beneficiary.service.js   # Beneficiary data retrieval
+│   └── location.service.js      # Location data retrieval
+├── middleware/             # Request lifecycle hooks
+│   ├── auth.js                  # JWT validation (protects admin routes)
+│   ├── errorHandler.js          # Centralized error formatting (JSON responses)
+│   └── notFound.js              # Catch-all for undefined routes (404)
+├── utils/                  # Shared helper functions
+│   ├── ngo.utils.js             # NGO-specific parsers/formatters
+│   ├── tokens.js                # JWT generation and rotation logic
+│   └── validators.js            # Input validation helpers
+└── db/
+    └── prisma.js           # Singleton Prisma Client instance
 prisma/
-  schema.prisma           # Data model
+└── schema.prisma           # Database schema and data models
 ```
 
 ## Author Onboarding (Backend)
@@ -44,12 +92,23 @@ Read in this order:
 15. `prisma/schema.prisma`
 
 ## API Flow
-1. Route receives request.
-2. Controller parses/validates query/body/path.
-3. Controller calls service.
-4. Service executes Prisma query.
-5. Controller returns normalized JSON.
-6. Errors pass through `notFound` and `errorHandler` middleware.
+1. **Request & Global Middleware**: Client sends a request; `cors()` handles permissions and `express.json()` parses the body.
+2. **Routing & Authentication**: Express matches the URL to a route; `requireAuth` middleware validates tokens for protected paths.
+3. **Controller Parsing**: The Controller extracts data from `req.params/query/body` and uses `utils/` for initial validation.
+4. **Service Logic & Prisma**: The Controller invokes a Service method, which executes business logic and **Prisma** database queries.
+5. **Submission & Response**: The Service returns data; the Controller sends a normalized JSON response back to the client.
+6. **Global Error Handling**: Unmatched routes trigger `notFound`; any logical errors are caught and formatted by the `errorHandler` middleware.
+
+## Error Handling Specification
+All errors follow this JSON structure:
+```json
+{
+  "message": "Human readable error",
+  "error": "ErrorType (optional)",
+  "stack": "Stack trace (development only)"
+}
+```
+Common codes: `400` (Bad Request), `401` (Unauthorized), `404` (Not Found), `500` (Server Error).
 
 ## Authentication Flow
 1. `POST /api/admin/login` validates env-configured credentials.
@@ -78,6 +137,11 @@ npx prisma generate
 npx prisma db push
 npm run dev
 ```
+
+## Prisma Commands Reference
+*   `npx prisma db push`: Sync schema to DB (retains data).
+*   `npx prisma generate`: Update the Prisma Client in `node_modules`.
+*   `npx prisma studio`: Open GUI to view/edit data.
 
 ## Endpoints
 ### Health

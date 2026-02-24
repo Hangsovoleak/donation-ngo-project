@@ -1,2 +1,6 @@
 project_chapter_scope_priority_unfolding.md
 Project_Report_Frontend_Backend.md
+node_modules
+.env
+.vscode
+*.md

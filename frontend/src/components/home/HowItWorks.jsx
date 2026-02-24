@@ -1,6 +1,23 @@
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      An informational section explaining the platform's multi-step donation 
+ *      discovery process using illustrative steps and media.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Search, Heart, CheckCircle, ShieldCheck } from "lucide-react";
 
-// Home page component: How donation works section
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Instructional "How It Works" component.
+ */
 function HowItWorks() {
     return (
         <section className="card p-8 md:p-10">
@@ -14,23 +31,23 @@ function HowItWorks() {
             </div>
 
             <div className="grid gap-10 lg:grid-cols-2 items-center">
-                {/* Animated GIF Section */}
+                {/* Media Explanation Area */}
                 <div className="order-2 lg:order-1">
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                         <img
                             src="https://i.pinimg.com/originals/e2/4c/98/e24c982529555d858850910b8ea8fc8c.gif"
-                            alt="Donation process animation showing browsing NGOs, selecting causes, and making donations"
+                            alt="Donation process animation"
                             className="w-full h-auto"
                             loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                     </div>
                     <p className="mt-4 text-xs text-center text-slate-500 italic">
-                        Using this website: Browse → Select → Donate → Make Impact
+                        Process: Browse → Select → Donate → Impact
                     </p>
                 </div>
 
-                {/* Step-by-Step Guide */}
+                {/* Step-by-Step Instructions */}
                 <div className="order-1 lg:order-2 space-y-5">
                     <div className="flex gap-4 group">
                         <div className="flex-shrink-0">
@@ -68,7 +85,7 @@ function HowItWorks() {
 
                     <div className="flex gap-4 group">
                         <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-110 transition-transform">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-50 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-110 transition-transform">
                                 3
                             </div>
                         </div>
@@ -83,6 +100,7 @@ function HowItWorks() {
                         </div>
                     </div>
 
+                    {/* Safety Context */}
                     <div className="mt-6 info-box">
                         <div className="flex items-start gap-3">
                             <ShieldCheck className="text-green-600 flex-shrink-0" size={24} />

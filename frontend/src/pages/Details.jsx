@@ -1,22 +1,38 @@
-// Details page flow:
-// Step 1: Read NGO id from route params.
-// Step 2: Fetch NGO detail from API.
-// Step 3: Build derived UI fields (image, map link, chips).
-// Step 4: Render loading, error, or final detail layout.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Profile view for a single NGO, showing full descriptions, 
+ *      contact details, maps, and donation instructions.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getNgoById } from "../services/ngo.service";
 import Chip from "../components/common/Chip";
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief NGO Details page component.
+ */
 function Details() {
-  // Step 1: Dynamic route param from /ngos/:id.
+  // NGO ID from dynamic route parameters
   const { id } = useParams();
-  // Request state.
+
+  // Data and request state
   const [ngo, setNgo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // Step 2: Refetch whenever route id changes.
+  /**
+   * @brief Fetch full NGO data including relations.
+   */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -32,17 +48,17 @@ function Details() {
     load();
   }, [id]);
 
-  // Step 3A: Normalize map link from multiple possible payload shapes.
+  // Derived: Resolve location map link from nested object structures
   const mapLink = useMemo(() => {
     return ngo?.map_link || ngo?.map_links?.[0] || ngo?.locations?.[0]?.map_link;
   }, [ngo]);
 
-  // Step 3B: Fallback image keeps the page presentable when API has no image.
+  // UI Fallback: Default hero image if none provided by API
   const imageUrl =
     ngo?.image_url ||
     "https://i.pinimg.com/1200x/a1/a6/d0/a1a6d07762619ed6d38e11269f573d32.jpg";
 
-  // Step 3C: Normalize relation arrays for rendering chip components.
+  // Derived: Ensure metadata arrays are iterable for rendering
   const categories = Array.isArray(ngo?.categories) ? ngo.categories : [];
   const beneficiaries = Array.isArray(ngo?.beneficiaries) ? ngo.beneficiaries : [];
 
@@ -92,7 +108,6 @@ function Details() {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
-      {/* Back */}
       <Link
         to="/browse"
         className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
@@ -142,11 +157,9 @@ function Details() {
         </div>
       </section>
 
-      {/* Quick donate bar */}
       <section className="card px-4 py-3 md:px-6 md:py-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2">
-
             <button
               type="button"
               className="h-9 rounded-full bg-slate-900 px-5 text-xs font-semibold text-white shadow-sm"
@@ -193,27 +206,22 @@ function Details() {
             ) : null}
           </div>
 
-          {/* How to donate */}
           <div className="card p-6">
             <h2 className="text-lg font-bold text-slate-950">How to donate</h2>
-
             <div className="mt-2 text-sm text-slate-800 whitespace-pre-line">
               {ngo.donation_info || "Donation info is not added yet. Try calling or visiting their website."}
             </div>
           </div>
         </div>
 
-        {/* Right: contact card */}
         <div className="space-y-6">
           <div className="card p-6">
             <h3 className="text-lg font-bold text-slate-950">Contact</h3>
-
             <div className="mt-4 space-y-3 text-sm text-slate-800">
               <div className="flex items-start justify-between gap-3">
                 <span className="font-semibold text-slate-900">City</span>
                 <span className="text-right">{ngo.city || "—"}</span>
               </div>
-
               <div className="flex items-start justify-between gap-3">
                 <span className="font-semibold text-slate-900">Phone</span>
                 <span className="text-right">{ngo.phone || "—"}</span>

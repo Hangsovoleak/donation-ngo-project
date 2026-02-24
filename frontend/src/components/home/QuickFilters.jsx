@@ -1,22 +1,39 @@
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Horizontal button list providing one-click category filtering for 
+ *      the home page.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Bookmark } from "lucide-react";
 
-// Home page component: Quick category filters
-// using it in HomePage.jsx to display quick category filters
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Quick Category Filter component.
+ * 
+ * @param categories List of category names.
+ * @param categoryIcons Metadata objects mapping names to icons/colors.
+ * @param onFilterClick Callback when a category is selected.
+ */
 function QuickFilters({ categories, categoryIcons, onFilterClick }) {
-    //create a map of category icons for quick filtering
+    // Lookup map for fast icon/color resolution
     const quickByLabel = new Map(categoryIcons.map((item) => [item.label, item]));
 
     return (
         <section className="card p-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-6">
                 {categories.map((c) => {
-
-                    //get the category icon and color from the map
                     const quick = quickByLabel.get(c);
                     const Icon = quick?.icon || Bookmark;
                     const color = quick?.color || "#fa9200";
-                    
-                    //display category icon and name
+
                     return (
                         <button
                             key={c}

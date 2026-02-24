@@ -1,26 +1,43 @@
-//import dotenv for environment variables
+/**
+ * Software Framework: Node.js (Express & Prisma)
+ * Description:
+ *      Server entry point. Handles environment configuration, 
+ *      database connectivity checks, and starts the HTTP listener.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import "dotenv/config";
 import app from "./app.js";
 import prisma from "./db/prisma.js";
+import cookieParser from "cookie-parser";
+
+/*------------------------------------------------------------------------------
+                                SERVER STARTUP
+------------------------------------------------------------------------------*/
 
 const port = process.env.PORT || 5000;
 
-//warm up the server
+/**
+ * @brief Warm up server.
+ * 
+ * Verifies the database connection before accepting requests.
+ */
 async function warmUp() {
   try {
-    //check database connection and warm up the server
     await prisma.$queryRaw`SELECT 1`;
-    console.log("DB OK! yeahhhhhh jork jey");
+    console.log("Database connection successful.");
   } catch (e) {
-    //if database connection failed
-    console.log("DB failed tt hx:", e.message);
+    console.log("Database connection failed:", e.message);
   }
 }
 
-//listen to port and warm up the server
+app.use(cookieParser());
+
+// Start HTTP Server
 app.listen(port, async () => {
-  //log port number
-  console.log(`API running port: http://localhost:${port}`);
-  //warm up the server
+  console.log(`API running at: http://localhost:${port}`);
   await warmUp();
 });

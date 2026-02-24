@@ -1,8 +1,20 @@
+/**
+ * Software Framework: Express.js (Node.js)
+ * Description:
+ *      This controller handles NGO-related operations, including listing,
+ *      filtering, creating, updating, and verifying NGO accounts.
+ * fully of dashboard admin
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 // NGO controller flow:
-// Step 1: Parse and validate request inputs.
-// Step 2: Build filters/payloads for service layer.
-// Step 3: Call service methods for database actions.
-// Step 4: Return API-friendly response shape or pass errors to middleware.
+// Parse and validate request inputs.
+// Build filters/payloads for service layer.
+// Call service methods for database actions.
+// Return API-friendly response shape or pass errors to middleware.
 import {
   countNgos,
   createNgo,
@@ -15,22 +27,36 @@ import {
 import { formatNgoDetail, parseNgoCreate, buildNgoUpdate } from "../utils/ngo.utils.js";
 import { parseId, toBool } from "../utils/validators.js";
 
+/*------------------------------------------------------------------------------
+                            CONTROLLER FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief List and filter NGOs function.
+ * 
+ * This function handles GET requests to list NGOs with optional filtering,
+ * pagination, and sorting.
+ * 
+ * @param req Express request object containing query parameters.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
 export async function listNgoController(req, res, next) {
   try {
-    // Step 1: Parse optional query filters.
+    // Parse optional query filters.
     const city = req.query.city ? String(req.query.city) : undefined;
     const search = req.query.search ? String(req.query.search) : undefined;
     const category = req.query.category ? String(req.query.category) : undefined;
     const verified = toBool(req.query.verified);
     const includeDetails = req.query.include === "details";
 
-    // Step 1B: Parse paging and sorting controls.
-    const page = req.query.page ? Number(req.query.page) : undefined;
-    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    // Parse paging and sorting controls.
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Number(req.query.limit) || 9);
     const sortBy = req.query.sortBy ? String(req.query.sortBy) : "id";
-    const sortOrder = req.query.sortOrder ? String(req.query.sortOrder) : "asc";
+    const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
-    // Step 2: Build Prisma `where` clause from validated query params.
+    // Build Prisma `where` clause from validated query params.
     const where = {
       ...(city && { city: { equals: city, mode: "insensitive" } }),
       ...(typeof verified === "boolean" && { verified }),
@@ -48,85 +74,87 @@ export async function listNgoController(req, res, next) {
       }),
     };
 
-    // Step 2B: Whitelist allowed sort fields to prevent invalid orderBy usage.
-    const allowedSort = new Set(["id", "name", "city", "created_at", "updated_at", "verified"]);
-    const safeSortBy = allowedSort.has(sortBy) ? sortBy : "id";
-    const safeSortOrder = sortOrder === "desc" ? "desc" : "asc";
+    // Simple Pagination: Skip records based on current page
+    const skip = (page - 1) * limit;
 
-    // Step 2C: Normalize pagination values and clamp page size.
-    const hasPagination = Number.isFinite(page) || Number.isFinite(limit);
-    const take = Number.isFinite(limit) ? Math.max(1, Math.min(100, limit)) : undefined;
-    const skip = Number.isFinite(page) && take ? Math.max(0, page - 1) * take : undefined;
+    // Query total count for simple metadata
+    const total = await countNgos(where);
 
-    // Step 3: Query total count only when pagination metadata is needed.
-    const total = hasPagination ? await countNgos(where) : undefined;
-
-    // Step 3B: Query data using service layer.
+    // Query data using service layer.
     const payload = await listNgos({
       where,
       includeDetails,
-      sortBy: safeSortBy,
-      sortOrder: safeSortOrder,
+      sortBy,
+      sortOrder,
       skip,
-      take,
+      take: limit,
     });
 
-    // Step 4: Return consistent paginated response shape when requested.
-    if (hasPagination) {
-      const pageValue = Number.isFinite(page) && page > 0 ? page : 1;
-      const limitValue = take || payload.length;
-      return res.json({
-        data: payload,
-        meta: {
-          page: pageValue,
-          limit: limitValue,
-          total: total ?? payload.length,
-          totalPages: limitValue ? Math.ceil((total ?? payload.length) / limitValue) : 1,
-          sortBy: safeSortBy,
-          sortOrder: safeSortOrder,
-        },
-      });
-    }
-
-    // Non-paginated response for simple list requests.
-    return res.json(payload);
+    // Return simplified response with data and basic meta
+    return res.json({
+      data: payload,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * @brief Get NGO by ID function.
+ * 
+ * Fetches a single NGO's details based on the provided ID.
+ * 
+ * @param req Express request object.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
 // GET /api/ngos/:id
 export async function getNgoController(req, res, next) {
   try {
-    // Step 1: Validate route param.
+    // Validate route param.
     const id = parseId(req.params.id);
     if (id == null) {
       return res.status(400).json({ message: "Invalid id" });
     }
 
-    // Step 3: Fetch one NGO.
+    // Fetch one NGO.
     const ngo = await getNgoById(id);
     if (!ngo) {
       return res.status(404).json({ message: "NGO not found" });
     }
 
-    // Step 4: Return normalized NGO detail payload.
+    // Return normalized NGO detail payload.
     return res.json(formatNgoDetail(ngo));
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * @brief Create NGO function.
+ * 
+ * Validates the request body and creates a new NGO entry in the database.
+ * 
+ * @param req Express request object containing the NGO creation data.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
 // POST /api/ngos
 export async function createNgoController(req, res, next) {
   try {
-    // Step 1: Validate and normalize create payload.
+    // Validate and normalize create payload.
     const input = parseNgoCreate(req.body);
     if (!input.ok) {
       return res.status(400).json({ message: input.error });
     }
 
-    // Step 3/4: Persist and return created resource.
+    // Persist and return created resource.
     const created = await createNgo(input.data);
     return res.status(201).json(formatNgoDetail(created));
   } catch (err) {
@@ -134,54 +162,81 @@ export async function createNgoController(req, res, next) {
   }
 }
 
+/**
+ * @brief Update NGO function.
+ * 
+ * Updates an existing NGO's information based on the provided ID and body data.
+ * 
+ * @param req Express request object.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
 // PATCH /api/ngos/:id
 export async function updateNgoController(req, res, next) {
   try {
-    // Step 1: Validate route param.
+    // Validate route param.
     const id = parseId(req.params.id);
     if (id == null) {
       return res.status(400).json({ message: "Invalid id" });
     }
 
-    // Step 2/3: Build patch payload and update row.
+    // Build patch payload and update row.
     const data = buildNgoUpdate(req.body);
     const updated = await updateNgo(id, data);
-    // Step 4: Return normalized updated resource.
+    // Return normalized updated resource.
     return res.json(formatNgoDetail(updated));
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * @brief Verify NGO function.
+ * 
+ * Toggles or sets the verification status of an NGO.
+ * 
+ * @param req Express request object.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
 // PATCH /api/ngos/:id/verify
 export async function verifyNgoController(req, res, next) {
   try {
-    // Step 1: Validate route param.
+    // Validate route param.
     const id = parseId(req.params.id);
     if (id == null) {
       return res.status(400).json({ message: "Invalid id" });
     }
 
-    // Step 2/3: Parse desired verify value (or toggle) and apply update.
+    // Parse desired verify value (or toggle) and apply update.
     const nextValue = toBool(req.body?.verified);
     const updated = await toggleNgoVerification(id, nextValue);
-    // Step 4: Return minimal verification payload.
+    // Return minimal verification payload.
     return res.json(updated);
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * @brief Delete NGO function.
+ * 
+ * Removes an NGO entry from the database based on the provided ID.
+ * 
+ * @param req Express request object.
+ * @param res Express response object.
+ * @param next Express next middleware function.
+ */
 // DELETE /api/ngos/:id
 export async function deleteNgoController(req, res, next) {
   try {
-    // Step 1: Validate route param.
+    // Validate route param.
     const id = parseId(req.params.id);
     if (id == null) {
       return res.status(400).json({ message: "Invalid id" });
     }
 
-    // Step 3/4: Delete resource and return success message.
+    // Delete resource and return success message.
     await deleteNgo(id);
     return res.json({ message: "NGO deleted" });
   } catch (err) {

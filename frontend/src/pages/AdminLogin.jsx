@@ -1,23 +1,39 @@
-// AdminLogin page flow:
-// Step 1: Capture email/password from form.
-// Step 2: Call login endpoint.
-// Step 3: Save access + refresh tokens.
-// Step 4: Redirect to /admin on success.
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Authentication gateway for administrators to access the directory management dashboard.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../services/admin.service";
-import { setAccessToken, setRefreshToken } from "../utils/authStorage";
+import { setAccessToken } from "../utils/authStorage";
 
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Admin Login page component.
+ */
 function AdminLogin() {
     const navigate = useNavigate();
 
-    // Controlled form + request status.
+    // Controlled inputs and operation status
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [err, setErr] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // Main auth action for this screen.
+    /**
+     * @brief Handle credential submission and session initialization.
+     * 
+     * @param event Form submission event.
+     */
     async function handleSubmit(event) {
         event.preventDefault();
         setErr("");
@@ -29,21 +45,22 @@ function AdminLogin() {
 
         setLoading(true);
         try {
-            // Step 2: Request JWT tokens from backend.
+            // Attempt to retrieve JWT session token
             const res = await loginAdmin({ email, password });
-            const token = res?.data?.token;
-            const refreshToken = res?.data?.refreshToken;
-            if (!token || !refreshToken) {
-                setErr("Login failed. No token returned.");
-                return;
+
+            // Store the token in memory
+            const { accessToken } = res.data;
+            if (accessToken) {
+                setAccessToken(accessToken);
             }
-            // Step 3: Persist tokens for authenticated API calls.
-            setAccessToken(token);
-            setRefreshToken(refreshToken);
-            // Step 4: Enter protected admin dashboard.
+
+            // ARTIFICIAL DELAY: Wait 5 seconds to show "Logging in..." state (for student demo)
+            await new Promise((resolve) => setTimeout(resolve, 2500));
+
+            // Navigate to protected administrative area
             navigate("/admin");
         } catch (e) {
-            // Show backend message when available.
+            // Propagate backend error messages or use generic fallback
             const message = e?.response?.data?.message || "Invalid email or password.";
             setErr(message);
         } finally {

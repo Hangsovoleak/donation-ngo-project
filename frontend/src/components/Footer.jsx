@@ -1,10 +1,24 @@
-// Footer: site-wide bottom section with links and disclaimers.
-// using it in App.jsx to display footer
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Site-wide footer component containing quick links, mission statement, 
+ *      and transparency disclaimers.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { Link } from "react-router-dom";
 
-//display footer
-function Footer() {
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
 
+/**
+ * @brief Application Footer component.
+ */
+function Footer() {
   return (
     <footer className="mt-16 border-t border-slate-200/70 bg-white/90 backdrop-blur">
       <div className="max-w-screen-xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">

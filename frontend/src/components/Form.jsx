@@ -1,10 +1,20 @@
-// NGO Form flow:
-// Step 1: Build form state (empty for create, mapped values for edit).
-// Step 2: Let admin edit fields, categories, beneficiaries, and locations.
-// Step 3: Convert selected names to ids before submit.
-// Step 4: Send normalized payload back to parent (Admin page).
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      A complex form component for creating and editing NGO records. 
+ *      Handles relational selections (categories, beneficiaries) and 
+ *      dynamic location inputs.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useEffect, useMemo, useState } from "react";
 
+/*------------------------------------------------------------------------------
+                                  CONSTANTS
+------------------------------------------------------------------------------*/
 const EMPTY_FORM = {
   name: "",
   description: "",
@@ -16,11 +26,17 @@ const EMPTY_FORM = {
   locations: [{ link: "" }],
 };
 
-// Step 1A: Convert API NGO detail into the local form shape used by this component.
+/*------------------------------------------------------------------------------
+                               INTERNAL HELPERS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Initialize form state from raw data.
+ */
 function buildInitialForm(initial) {
   const locations =
     Array.isArray(initial.locations) && initial.locations.length
-      ? initial.locations.map((loc) => ({ link: toLink(loc) }))
+      ? initial.locations.map((loc) => ({ link: typeof loc === "string" ? loc : loc?.link || "" }))
       : initial.map_link
         ? [{ link: initial.map_link }]
         : [{ link: "" }];
@@ -32,67 +48,76 @@ function buildInitialForm(initial) {
     city: initial.city || "",
     phone: initial.phone || "",
     image_url: initial.image_url || "",
-    beneficiaries: Array.isArray(initial.beneficiaries) ? initial.beneficiaries : [],
-    categories: Array.isArray(initial.categories) ? initial.categories : [],
+    beneficiaries: Array.isArray(initial.beneficiaries)
+      ? initial.beneficiaries.map(b => typeof b === 'string' ? b : (b?.name || ""))
+      : [],
+    categories: Array.isArray(initial.categories)
+      ? initial.categories.map(c => typeof c === 'string' ? c : (c?.name || ""))
+      : [],
     locations,
   };
 }
 
-// Helper: support location entries as string or object.
-function toLink(loc) {
-  if (typeof loc === "string") return loc;
-  return loc?.link || "";
-}
+/*------------------------------------------------------------------------------
+                             COMPONENT FUNCTIONS
+------------------------------------------------------------------------------*/
 
-// Reusable form used by both "Add NGO" and "Edit NGO" actions.
+/**
+ * @brief NGO Management Form component.
+ * 
+ * @param initial Optional initial NGO data for editing.
+ * @param categories Available NGO categories.
+ * @param beneficiaries Available beneficiary types.
+ * @param onCancel Cancel callback.
+ * @param onSubmit Submit callback with normalized data.
+ * @param isSubmitting Boolean loading state.
+ */
 function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmitting = false }) {
   const [form, setForm] = useState(EMPTY_FORM);
 
-  // Step 1B: When editing, pre-fill the form with existing NGO data.
+  // Synchronize form state when initial data changes
   useEffect(() => {
-    if (!initial) return;
-    setForm(buildInitialForm(initial));
+    console.log("Form: useEffect [initial] triggered. initial is:", initial);
+    if (!initial) {
+      console.log("Form: No initial data, keeping empty form.");
+      return;
+    }
+    const built = buildInitialForm(initial);
+    console.log("Form: Built form state from initial:", built);
+    setForm(built);
   }, [initial]);
 
-  // Step 2A: Build display names for category chips.
+  // Derived display names for categories
   const categoryNames = useMemo(() => {
     return Array.isArray(categories) && categories.length
       ? categories.map((cate) => cate.name || cate)
       : [
-        "Education",
-        "Healthcare",
-        "Food",
-        "Clothing",
-        "Enviroment",
-        "Women Empowerment",
-        "Disaster Relief",
-        "Animal Welface",
+        "Education", "Healthcare", "Food", "Clothing", "Enviroment",
+        "Women Empowerment", "Disaster Relief", "Animal Welface"
       ];
   }, [categories]);
 
-  // Step 2B: Build display names for beneficiary chips.
+  // Derived display names for beneficiaries
   const beneficiaryNames = useMemo(() => {
     return Array.isArray(beneficiaries) && beneficiaries.length
       ? beneficiaries.map((bene) => bene.name || bene)
       : ["Children", "Elderly", "Community", "Women", "Animal"];
   }, [beneficiaries]);
 
-  // Step 3A: Name -> id map for category ids expected by backend.
+  // Mapping helpers for backend ID resolution
   const categoryNameToId = useMemo(() => {
     return new Map((categories || []).map((cate) => [cate.name, cate.id]));
   }, [categories]);
 
-  // Step 3B: Name -> id map for beneficiary ids expected by backend.
   const beneficiaryNameToId = useMemo(() => {
     return new Map((beneficiaries || []).map((bene) => [bene.name, bene.id]));
   }, [beneficiaries]);
 
-  // Generic text/select field updater.
+  // Field updaters
   function updateField(key) {
     return (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
-  // Multi-select behavior for categories.
   function toggleCategory(name) {
     setForm((prev) => ({
       ...prev,
@@ -102,15 +127,15 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
     }));
   }
 
-  // Single-select behavior for beneficiaries.
   function toggleBeneficiary(name) {
     setForm((prev) => ({
       ...prev,
-      beneficiaries: prev.beneficiaries.includes(name) ? [] : [name],
+      beneficiaries: prev.beneficiaries.includes(name)
+        ? prev.beneficiaries.filter((bene) => bene !== name)
+        : [...prev.beneficiaries, name],
     }));
   }
 
-  // Update a specific location link row.
   function updateLocation(index) {
     return (e) => {
       const value = e.target.value;
@@ -123,12 +148,10 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
     };
   }
 
-  // Add one more location input row.
   function addLocation() {
     setForm((prev) => ({ ...prev, locations: [...prev.locations, { link: "" }] }));
   }
 
-  // Remove one location row, but keep at least one input visible.
   function removeLocation(index) {
     setForm((prev) => {
       const next = prev.locations.filter((_, i) => i !== index);
@@ -136,7 +159,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
     });
   }
 
-  // Step 4: Validate and submit normalized payload to parent.
+  // Submission handler with normalization
   function handleSubmit(event) {
     event.preventDefault();
 
@@ -164,7 +187,6 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
     });
   }
 
-  // Render form fields and action buttons.
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg p-5 md:p-6">
       <div className="flex items-start justify-between gap-3">
@@ -203,7 +225,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
           />
         </div>
 
-        {/* City */}
+        {/* City Selection */}
         <div>
           <label className="text-xs font-semibold text-slate-600 mb-2 block">Operating City</label>
           <select
@@ -212,9 +234,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
             className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none text-sm text-slate-900"
             required
           >
-            <option value="" disabled>
-              Select Province
-            </option>
+            <option value="" disabled>Select Province</option>
             <option value="Banteay Meanchey">Banteay Meanchey</option>
             <option value="Battambang">Battambang</option>
             <option value="Kampong Chhnang">Kampong Chhnang</option>
@@ -242,7 +262,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
           </select>
         </div>
 
-        {/* Phone */}
+        {/* Contact Phone */}
         <div>
           <label className="text-xs font-semibold text-slate-600 mb-2 block">Phone Number</label>
           <input
@@ -254,7 +274,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
           />
         </div>
 
-        {/* Image URL */}
+        {/* Visual Media */}
         <div className="md:col-span-2">
           <label className="text-xs font-semibold text-slate-600 mb-2 block">Image URL</label>
           <input
@@ -266,55 +286,48 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
           />
         </div>
 
-        {/* Beneficiaries */}
+        {/* Selection Groups */}
         <div className="md:col-span-2">
           <div className="text-xs font-semibold text-slate-600 mb-2">Donation for who?</div>
           <div className="flex flex-wrap gap-2">
-            {beneficiaryNames.map((target) => {
-              const active = form.beneficiaries.includes(target);
-              return (
-                <button
-                  key={target}
-                  type="button"
-                  onClick={() => toggleBeneficiary(target)}
-                  className={
-                    active
-                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white border border-slate-900"
-                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200"
-                  }
-                >
-                  {target}
-                </button>
-              );
-            })}
+            {beneficiaryNames.map((target) => (
+              <button
+                key={target}
+                type="button"
+                onClick={() => toggleBeneficiary(target)}
+                className={
+                  form.beneficiaries.includes(target)
+                    ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white border border-slate-900"
+                    : "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200"
+                }
+              >
+                {target}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Categories */}
         <div className="md:col-span-2">
           <div className="text-xs font-semibold text-slate-600 mb-2">Categories</div>
           <div className="flex flex-wrap gap-2">
-            {categoryNames.map((c) => {
-              const checked = form.categories.includes(c);
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => toggleCategory(c)}
-                  className={
-                    checked
-                      ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white border border-slate-900"
-                      : "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200"
-                  }
-                >
-                  {c}
-                </button>
-              );
-            })}
+            {categoryNames.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => toggleCategory(c)}
+                className={
+                  form.categories.includes(c)
+                    ? "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white border border-slate-900"
+                    : "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200"
+                }
+              >
+                {c}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Locations */}
+        {/* Geographic Locations */}
         <div className="md:col-span-2">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-semibold text-slate-600">Donation Location Links</div>
@@ -341,7 +354,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
                     placeholder="Paste Google Maps link"
                     className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none"
                   />
-                  {form.locations.length > 1 ? (
+                  {form.locations.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeLocation(index)}
@@ -349,7 +362,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
                     >
                       Remove
                     </button>
-                  ) : null}
+                  )}
                 </div>
               </div>
             ))}
@@ -357,7 +370,7 @@ function Form({ initial, categories, beneficiaries, onCancel, onSubmit, isSubmit
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Form Actions */}
       <div className="mt-6 flex gap-3">
         <button
           type="button"

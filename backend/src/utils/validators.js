@@ -1,16 +1,37 @@
-// Small helper functions for common validation/parsing.
+/**
+ * Software Framework: Node.js
+ * Description:
+ *      Shared helper functions for input validation and data parsing.
+ * 
+ */
 
-//this using for verify and unverify
+/*------------------------------------------------------------------------------
+                            VALIDATION FUNCTIONS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Convert value to boolean.
+ * 
+ * Supports both literal booleans and string representations.
+ * 
+ * @param value Input value.
+ * @returns Boolean value or undefined.
+ */
 export function toBool(value) {
-  //check value is boolean or not for verify and unverify
   if (value === true || value === "true") return true;
   if (value === false || value === "false") return false;
   return undefined;
 }
 
-//this using for parse id and return number
+/**
+ * @brief Parse numeric ID.
+ * 
+ * Validates that a value is a finite number and returns it.
+ * 
+ * @param value Input ID.
+ * @returns Valid numeric ID or null.
+ */
 export function parseId(value) {
   const n = Number(value);
-  //check value is number or not
   return Number.isFinite(n) ? n : null;
 }

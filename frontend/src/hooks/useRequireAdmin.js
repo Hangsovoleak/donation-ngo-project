@@ -1,14 +1,33 @@
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Custom authentication hook that enforces administrator 
+ *      access for protected routes.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAccessToken } from "../utils/authStorage";
-// Redirects to login if no admin token exists.
-// Returns true when the user is authenticated.
+
+/*------------------------------------------------------------------------------
+                                CUSTOM HOOKS
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Enforce admin authentication.
+ * 
+ * Redirects to the login page if no valid session token is found.
+ * 
+ * @return boolean Authentication status.
+ */
 export function useRequireAdmin() {
-  //import required hooks and utils
   const navigate = useNavigate();
   const [isAuthed, setIsAuthed] = useState(false);
 
-  //check if user is authenticated and redirect to login if not
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {

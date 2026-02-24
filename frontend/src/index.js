@@ -1,11 +1,36 @@
+/**
+ * Software Framework: React (Frontend)
+ * Description:
+ *      Application entry point responsible for DOM mounting, 
+ *      routing provider initialization, and performance monitoring.
+ * 
+ */
+
+/*------------------------------------------------------------------------------
+                                   IMPORTS
+------------------------------------------------------------------------------*/
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+
+// Global Styles
 import './index.css';
+
+// Root Component
 import App from './App';
+
+// Metrics
 import reportWebVitals from './reportWebVitals';
-import {BrowserRouter} from 'react-router-dom';
+
+/*------------------------------------------------------------------------------
+                                INITIALIZATION
+------------------------------------------------------------------------------*/
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+/**
+ * @brief Render application tree.
+ */
 root.render(
   <React.StrictMode>
     <BrowserRouter>
@@ -14,7 +39,5 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// Performance tracking (optional)
 reportWebVitals();
